@@ -13,8 +13,9 @@ public class DispersedExchange extends SimState {
     private static final long serialVersionUID = 1;
 
     // Grid dimensions
+    public int numAgents;
     public int gridWidth;
-    public int gridHeight;
+    public final int gridHeight = 1;
 
     enum Good {
         ONE(1),
@@ -29,27 +30,36 @@ public class DispersedExchange extends SimState {
         public int toInt() { return goodNum; }
     }
 
+    // Array of Traders
+    Trader[] traderArray = new Trader[numAgents];
+
     // Grid of agent locations
     public ObjectGrid2D traderGrid;
 
     /** Constructor default */
     public DispersedExchange(long seed) {
-        // Required by SimState
-        super(seed);
+        this(seed, 100);
     }
     
     /** Constructor */
-    public DispersedExchange(long seed, int width) {
+    public DispersedExchange(long seed, int agents) {
         // Required by SimState
         super(seed);
 
-        this.gridWidth = width;
+        this.numAgents = agents;
+        this.gridWidth = this.numAgents;
+    }
+
+    void setEndowments() {
+        int[] indexArray = new int[numAgents];
     }
     
     public void start() {
         super.start();
 
-        traderGrid = new ObjectGrid2D(gridWidth, gridHeight, 0);
+        setEndowments();
+
+        traderGrid = new ObjectGrid2D(gridWidth, gridHeight, traderArray);
     }
 
     /** Main */
