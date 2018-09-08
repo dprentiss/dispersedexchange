@@ -31,7 +31,7 @@ public class DispersedExchange extends SimState {
     }
 
     // Array of Traders
-    Trader[] traderArray = new Trader[numAgents];
+    Trader[] traderArray;
 
     // Grid of agent locations
     public ObjectGrid2D traderGrid;
@@ -48,17 +48,37 @@ public class DispersedExchange extends SimState {
 
         this.numAgents = agents;
         this.gridWidth = this.numAgents;
+        traderArray = new Trader[numAgents];
+    }
+
+    //Fisher-Yates array shuffle
+    private void shuffleArray(double[] array) {
+        int index;
+        double tmp; 
+        for (int i = array.length - 1; i > 0; i--) {
+            index = random.nextInt(i + 1);
+            tmp = array[index];
+            array[index] = array[i];
+            array[i] = tmp;
+        }
     }
 
     void setEndowments() {
-        int[] indexArray = new int[numAgents];
+        double[] endowments = new double[numAgents];
+        for (int i = 0; i < endowments.length; i = i+2) {
+            endowments[i] = random.nextDouble(false, false);
+            endowments[i+1] = 1 - endowments[i];
+        }
+        shuffleArray(endowments);
+        for (int i = 0; i < numAgents; i++) {
+            traderArray[i] = new Trader(i, endowments[i], 1 - endowments[i]);
+            traderArray[i].stopper = schedule.scheduleRepeating(traderArray[i]);
+        }
     }
     
     public void start() {
         super.start();
-
         setEndowments();
-
         traderGrid = new ObjectGrid2D(gridWidth, gridHeight, traderArray);
     }
 

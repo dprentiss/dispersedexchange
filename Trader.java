@@ -36,10 +36,11 @@ public class Trader implements Steppable {
     };
 
     /** Constructor */
-    public Trader(int id, int x1, int x2) {
+    public Trader(int id, double x1, double x2) {
         this.idNum = id;
         this.x1 = x1;
         this.x2 = x2;
+        System.out.printf("Trader %d has %f of good one and %f of good two.\n", idNum, x1, x2);
     }
 
     public void step(final SimState state) {
