@@ -75,7 +75,11 @@ public class DispersedExchange extends SimState {
         }
         shuffleArray(endowments);
         for (int i = 0; i < numAgents; i++) {
-            traderArray[i] = new Trader(i, endowments[i], 1 - endowments[i], numAgents);
+            traderArray[i] = new Trader(
+                    i, 
+                    endowments[i], 
+                    1 - endowments[i], 
+                    2 * neighborhoodSize);
             traderArray[i].stopper = schedule.scheduleRepeating(traderArray[i]);
         }
     }

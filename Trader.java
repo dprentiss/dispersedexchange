@@ -41,7 +41,7 @@ public class Trader implements Steppable {
         return allocation;
     };
 
-    double getNetUtility(DispersedExchange de, Side ssside) {
+    double getNetUtility(DispersedExchange market, Side ssside) {
         return 0;
     }
 
@@ -55,7 +55,7 @@ public class Trader implements Steppable {
     }
 
     public void step(final SimState state) {
-        DispersedExchange de = (DispersedExchange)state;
+        DispersedExchange market = (DispersedExchange)state;
 
         //Advertise
 
