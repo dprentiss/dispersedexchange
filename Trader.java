@@ -15,11 +15,17 @@ public class Trader implements Steppable {
     Stoppable stopper;
 
     // Properties
-    public int idNum;
+    public final int idNum;
+
+    enum Message {
+        BUY,
+        SELL;
+    }
     
     // Variables
     double x1;
     double x2;
+    double[] MRS;
 
     // Accessors
     double getAllocation(int good) {
@@ -35,15 +41,24 @@ public class Trader implements Steppable {
         return allocation;
     };
 
+    double getNetUtility(DispersedExchange de, Side ssside) {
+        return 0;
+    }
+
     /** Constructor */
-    public Trader(int id, double x1, double x2) {
+    public Trader(int id, double x1, double x2, int num) {
         this.idNum = id;
         this.x1 = x1;
         this.x2 = x2;
+        this.MRS = new double[num];
         System.out.printf("Trader %d has %f of good one and %f of good two.\n", idNum, x1, x2);
     }
 
     public void step(final SimState state) {
         DispersedExchange de = (DispersedExchange)state;
+
+        //Advertise
+
+        //Trade
     }
 }
