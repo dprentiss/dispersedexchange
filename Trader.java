@@ -5,6 +5,7 @@
 package sim.app.dispersedexchange;
 import sim.util.*;
 import sim.engine.*;
+import sim.field.network.*;
 
 public class Trader implements Steppable {
 
@@ -17,15 +18,14 @@ public class Trader implements Steppable {
     // Properties
     public final int idNum;
 
-    enum Message {
-        BUY,
-        SELL;
-    }
-    
     // Variables
     double x1;
     double x2;
-    double[] MRS;
+    int numGoods;
+    double[] endowment;
+    double[] allocation;
+    double[][] MRS;
+    Bag neighbors;
 
     // Accessors
     double getAllocation(int good) {
@@ -41,21 +41,43 @@ public class Trader implements Steppable {
         return allocation;
     };
 
-    double getNetUtility(DispersedExchange market, Side ssside) {
-        return 0;
+    void updateMRS() {
+        for (int i = 0; i < MRS.length; i++) {
+            for (int j = 0; j < MRS.length; j++) {
+                MRS[i][j] = allocation[j] / allocation[i];
+            }
+        }
+    }
+
+    void printMRS() {
+        for (int i = 0; i < MRS.length; i++) {
+            for (int j = 0; j < MRS.length; j++) {
+                System.out.print(MRS[i][j]);
+                System.out.print(" ");
+            }
+            System.out.println();
+        }
     }
 
     /** Constructor */
-    public Trader(int id, double x1, double x2, int num) {
+    public Trader(int id, double[] endowment) {
         this.idNum = id;
-        this.x1 = x1;
-        this.x2 = x2;
-        this.MRS = new double[num];
-        System.out.printf("Trader %d has %f of good one and %f of good two.\n", idNum, x1, x2);
+        this.endowment = endowment;
+        allocation = endowment;
+        numGoods = allocation.length;
+        System.out.printf("Trader %d has %f of good one and %f of good two.\n", idNum, allocation[0], allocation[1]);
+        MRS = new double[numGoods][numGoods];
+        updateMRS();
+        printMRS();
     }
 
     public void step(final SimState state) {
         DispersedExchange market = (DispersedExchange)state;
+        neighbors = market.traderNet.getEdgesIn(this);
+        for (int i = 0; i < neighbors.numObjs; i++) {
+            Edge e = (Edge)neighbors.objs[i];
+            Trader n = (Trader)e.getOtherNode(this);
+        }
 
         //Advertise
 
