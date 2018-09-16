@@ -20,23 +20,25 @@ public class Trader implements Steppable {
 
     // Variables
     int numGoods;
-    double[] endowment;
+    final double[] endowment;
     double[] allocation;
     double[][] MRS;
-    Bag neighbors;
-    Trader[] neighborsTmp;
+    Edge[] neighborsIn;
+    Edge[] neighborsOut;
+    Edge previousBid;
 
     // Accessors
     double getAllocation(int good) {
         return allocation[good];
     };
 
-    void getneighbors(DispersedExchange market, Trader[] neighborArray) {
+    void updateNeighbors(DispersedExchange market) {
         Bag edges = market.traderNet.getEdgesIn(this);
-        neighborArray = new Trader[edges.numObjs];
+        neighborsIn = new Edge[edges.numObjs];
+        neighborsOut = new Edge[edges.numObjs];
         for (int i = 0; i < edges.numObjs; i++) {
-            Edge e = (Edge)neighbors.objs[i];
-            neighborArray[i] = (Trader)e.getOtherNode(this);
+            neighborsIn[i] = (Edge)edges.objs[i];
+            neighborsOut[i] = market.traderNet.getEdge(this, neighborsIn[i].getFrom());
         }
     }
 
@@ -48,6 +50,12 @@ public class Trader implements Steppable {
         }
     }
 
+    void postBids(DispersedExchange market) {
+        for (int i = 0; i < neighborsOut.length; i++) {
+            Bid b = new Bid(MRS, null);
+        }
+    }
+
     void printMRS() {
         for (int i = 0; i < MRS.length; i++) {
             for (int j = 0; j < MRS.length; j++) {
@@ -56,6 +64,59 @@ public class Trader implements Steppable {
             }
             System.out.println();
         }
+    }
+
+    void checkPreviousBid(DispersedExchange market) {
+        if (previousBid != null) {
+            Bid bid = (Bid)previousBid.getInfo();
+            if (bid.accepted == true) {
+                for (int i = 0; i < numGoods; i++) {
+                    allocation[i] -= bid.invoice[i];
+                }
+                updateMRS();
+            }
+            previousBid.setInfo(null);
+        }
+    }
+
+    void chooseBid(DispersedExchange market) {
+        int bestBid = -1;
+        double bestUtility = 0;
+        for (int i = 0; i < neighborsIn.length; i++) {
+            Bid bid = (Bid)neighborsIn[i].getInfo();
+            double tmp = getUtilityChange(bid);
+            if (tmp > bestUtility) {
+                bestBid = i;
+                bestUtility = tmp;
+            }
+        }
+    }
+
+    void acceptBid(Bid bid) {
+        bid.accepted = true;
+        for (int i = 0; i < numGoods; i++) {
+            allocation[i] += bid.invoice[i];
+        }
+    }
+
+    double getUtility(double[] alloc) {
+        double utility = 0;
+        for (int i = 0; i < numGoods; i++) {
+            utility *= Math.pow(alloc[i], 1 / numGoods);
+        }
+        return utility;
+    }
+
+    double getUtility() {
+        return getUtility(allocation);
+    }
+
+    double getUtilityChange(Bid bid) {
+        double[] tmp = new double[numGoods];
+        for (int i = 0; i < tmp.length; i++) {
+            tmp[i] = allocation[i] + bid.invoice[i];
+        }
+        return getUtility(tmp) - getUtility();
     }
 
     /** Constructor */
@@ -72,18 +133,17 @@ public class Trader implements Steppable {
 
     public void step(final SimState state) {
         DispersedExchange market = (DispersedExchange)state;
-        neighbors = market.traderNet.getEdgesIn(this);
-        for (int i = 0; i < neighbors.numObjs; i++) {
-            Edge e = (Edge)neighbors.objs[i];
-            Trader n = (Trader)e.getOtherNode(this);
-        }
+        updateNeighbors(market);
+
+        // Check if previuous bid was accepted
+        checkPreviousBid(market);
 
         // Consider offers from neighbors during the previous round
-        // and accept the best rational offer    
+        // and accept the best rational, affordable bid
 
         updateMRS();
 
-        // Consider neighbors holding and make the best rational
+        // Consider neighbors MRS and make the best rational
         // offer one neighbor
     }
 }
