@@ -19,27 +19,26 @@ public class Trader implements Steppable {
     public final int idNum;
 
     // Variables
-    double x1;
-    double x2;
     int numGoods;
     double[] endowment;
     double[] allocation;
     double[][] MRS;
     Bag neighbors;
+    Trader[] neighborsTmp;
 
     // Accessors
     double getAllocation(int good) {
-        double allocation = 0;
-        switch (good) {
-            case 1:
-                allocation = x1;
-                break;
-            case 2:
-                allocation = x2;
-                break;
-        }
-        return allocation;
+        return allocation[good];
     };
+
+    void getneighbors(DispersedExchange market, Trader[] neighborArray) {
+        Bag edges = market.traderNet.getEdgesIn(this);
+        neighborArray = new Trader[edges.numObjs];
+        for (int i = 0; i < edges.numObjs; i++) {
+            Edge e = (Edge)neighbors.objs[i];
+            neighborArray[i] = (Trader)e.getOtherNode(this);
+        }
+    }
 
     void updateMRS() {
         for (int i = 0; i < MRS.length; i++) {
@@ -79,8 +78,12 @@ public class Trader implements Steppable {
             Trader n = (Trader)e.getOtherNode(this);
         }
 
-        //Advertise
+        // Consider offers from neighbors during the previous round
+        // and accept the best rational offer    
 
-        //Trade
+        updateMRS();
+
+        // Consider neighbors holding and make the best rational
+        // offer one neighbor
     }
 }
