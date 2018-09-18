@@ -30,7 +30,11 @@ public class Trader implements Steppable {
     // Accessors
     double getAllocation(int good) {
         return allocation[good];
-    };
+    }
+
+    double[] getAllocation() {
+        return allocation;
+    }
 
     void updateNeighbors(DispersedExchange market) {
         Bag edges = market.traderNet.getEdgesIn(this);
@@ -84,7 +88,7 @@ public class Trader implements Steppable {
         double bestUtility = 0;
         for (int i = 0; i < neighborsIn.length; i++) {
             Bid bid = (Bid)neighborsIn[i].getInfo();
-            double tmp = getUtilityChange(bid);
+            double tmp = getUtilityChange(bid.invoice);
             if (tmp > bestUtility) {
                 bestBid = i;
                 bestUtility = tmp;
@@ -93,10 +97,10 @@ public class Trader implements Steppable {
     }
 
     void acceptBid(Bid bid) {
-        bid.accepted = true;
         for (int i = 0; i < numGoods; i++) {
             allocation[i] += bid.invoice[i];
         }
+        bid.accepted = true;
     }
 
     double getUtility(double[] alloc) {
@@ -111,12 +115,22 @@ public class Trader implements Steppable {
         return getUtility(allocation);
     }
 
-    double getUtilityChange(Bid bid) {
+    double getUtilityChange(double[] invoice) {
         double[] tmp = new double[numGoods];
         for (int i = 0; i < tmp.length; i++) {
-            tmp[i] = allocation[i] + bid.invoice[i];
+            tmp[i] = allocation[i] + invoice[i];
         }
         return getUtility(tmp) - getUtility();
+    }
+
+    double getUtilityChangeAlt(Bid bid) {
+        double oldUtility = 0;
+        double newUtility = 0;
+        for (int i = 0; i < numGoods; i++) {
+            newUtility *= allocation[i] + bid.invoice[i];
+            oldUtility *= allocation[i] + bid.invoice[i];
+        }
+        return 1 / numGoods * (newUtility - oldUtility);
     }
 
     /** Constructor */
