@@ -79,9 +79,11 @@ public class DispersedExchange extends SimState {
         traderNet.addEdge(traderArray[0],
                 traderArray[traderArray.length - 1], null);
         //System.out.print(traderNet.getAdjacencyList(false)[4].length);
+        /*
         System.out.println(
                 traderArray[0].getUtilityChange(traderArray[2].getAllocation())
                 );
+                */
     }
 
     /** Main */

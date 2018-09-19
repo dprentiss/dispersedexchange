@@ -104,9 +104,9 @@ public class Trader implements Steppable {
     }
 
     double getUtility(double[] alloc) {
-        double utility = 0;
+        double utility = 1;
         for (int i = 0; i < numGoods; i++) {
-            utility *= Math.pow(alloc[i], 1 / numGoods);
+            utility *= Math.pow(alloc[i], 1.0 / numGoods);
         }
         return utility;
     }
@@ -123,15 +123,18 @@ public class Trader implements Steppable {
         return getUtility(tmp) - getUtility();
     }
 
-    double getUtilityChangeAlt(Bid bid) {
-        double oldUtility = 0;
-        double newUtility = 0;
+    /*
+    double getUtilityChangeAlt(double[] invoice) {
+        // TODO this function is broken
+        double oldUtility = 1;
+        double newUtility = 1;
         for (int i = 0; i < numGoods; i++) {
-            newUtility *= allocation[i] + bid.invoice[i];
-            oldUtility *= allocation[i] + bid.invoice[i];
+            newUtility *= allocation[i] + invoice[i];
+            oldUtility *= allocation[i];
         }
-        return 1 / numGoods * (newUtility - oldUtility);
+        return 1.0 / numGoods * (newUtility - oldUtility);
     }
+    */
 
     /** Constructor */
     public Trader(int id, double[] endowment) {
