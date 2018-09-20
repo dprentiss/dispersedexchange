@@ -19,7 +19,7 @@ public class Trader implements Steppable {
     public final int idNum;
 
     // Variables
-    int numGoods;
+    final int numGoods;
     final double[] endowment;
     double[] allocation;
     double[][] MRS;
@@ -83,24 +83,35 @@ public class Trader implements Steppable {
         }
     }
 
-    void chooseBid(DispersedExchange market) {
-        int bestBid = -1;
-        double bestUtility = 0;
-        for (int i = 0; i < neighborsIn.length; i++) {
-            Bid bid = (Bid)neighborsIn[i].getInfo();
-            double tmp = getUtilityChange(bid.invoice);
-            if (tmp > bestUtility) {
-                bestBid = i;
-                bestUtility = tmp;
-            }
-        }
-    }
-
-    void acceptBid(Bid bid) {
+    void acceptBid(Edge neighbor) {
+        Bid bid = (Bid)neighbor.getInfo();
         for (int i = 0; i < numGoods; i++) {
             allocation[i] += bid.invoice[i];
         }
         bid.accepted = true;
+        neighbor.setInfo(bid);
+    }
+
+    void chooseBid(DispersedExchange market) {
+        int bestBidNum = -1;
+        double bestUtility = 0;
+        for (int i = 0; i < neighborsIn.length; i++) {
+            Bid bid = (Bid)neighborsIn[i].getInfo();
+            if (bid != null) {
+                double tmp = getUtilityChange(bid.invoice);
+                if (tmp > bestUtility) {
+                    bestBidNum = i;
+                    bestUtility = tmp;
+                }
+            }
+        }
+        if (bestBidNum > -1) {
+            acceptBid(neighborsIn[bestBidNum]);
+            updateMRS();
+        }
+    }
+
+    void makeBid(DispersedExchange market) {
     }
 
     double getUtility(double[] alloc) {
@@ -157,10 +168,10 @@ public class Trader implements Steppable {
 
         // Consider offers from neighbors during the previous round
         // and accept the best rational, affordable bid
-
-        updateMRS();
+        chooseBid(market);
 
         // Consider neighbors MRS and make the best rational
-        // offer one neighbor
+        // offer to one neighbor
+        makeBid(market);
     }
 }
