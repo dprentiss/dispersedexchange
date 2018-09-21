@@ -15,13 +15,15 @@ public class Bid {
     // Properties
     public final double[][] MRS;
     public final double[] invoice;
+    public final double[] inventory;
 
     // Variables
     public boolean accepted;
 
     /** Constructor */
-    public Bid(double[][] MRS, double[] invoice) {
+    public Bid(double[][] MRS, double[] invoice, double[] inventory) {
         this.MRS = MRS;
         this.invoice = invoice;
+        this.inventory = inventory;
     }
 }

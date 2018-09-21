@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 David Prentiss
+  Copyright 2018 David Prentiss
  */
 
 package sim.app.dispersedexchange;
@@ -55,8 +55,26 @@ public class Trader implements Steppable {
     }
 
     void postBids(DispersedExchange market) {
+        double bestUtility = 0;
+        double tmpUtility;  
+        Bid bestBid = null;
+        Bid tmpBid;
+        int bestBidNum = -1;
+        for (int i = 0; i < neighborsIn.length; i++) {
+            tmpBid = makeBid((Bid)neighborsIn[i].getInfo());
+            tmpUtility = getUtility(tmpBid.invoice);
+            if (tmpUtility > bestUtility) {         
+                bestBid = tmpBid;
+                bestUtility = tmpUtility;
+                bestBidNum = i;
+            }
+        }
         for (int i = 0; i < neighborsOut.length; i++) {
-            Bid b = new Bid(MRS, null);
+            if (i == bestBidNum) {
+                neighborsOut[i].setInfo(bestBid);
+            } else {
+                neighborsOut[i].setInfo(new Bid(MRS, null, allocation));
+            }
         }
     }
 
@@ -92,16 +110,27 @@ public class Trader implements Steppable {
         neighbor.setInfo(bid);
     }
 
+    boolean checkInventory(double[] invoice) {
+        double[] tmp = new double[numGoods];
+        for (int i = 0; i < numGoods; i++) {
+            tmp[i] = allocation[i] + invoice[i];
+            if (tmp[i] <= 0) return false;
+        }
+        return true;
+    }
+
     void chooseBid(DispersedExchange market) {
         int bestBidNum = -1;
         double bestUtility = 0;
         for (int i = 0; i < neighborsIn.length; i++) {
             Bid bid = (Bid)neighborsIn[i].getInfo();
             if (bid != null) {
-                double tmp = getUtilityChange(bid.invoice);
-                if (tmp > bestUtility) {
-                    bestBidNum = i;
-                    bestUtility = tmp;
+                if (checkInventory(bid.invoice)) {
+                    double tmp = getUtilityChange(bid.invoice);
+                    if (tmp > bestUtility) {
+                        bestBidNum = i;
+                        bestUtility = tmp;
+                    }
                 }
             }
         }
@@ -111,7 +140,29 @@ public class Trader implements Steppable {
         }
     }
 
-    void makeBid(DispersedExchange market) {
+    Bid makeBid(Bid bid) {
+        double[] newInvoice = new double[numGoods];
+        double[] maxQuantities = new double[numGoods];
+        double[][] prices = new double[numGoods][numGoods];
+        double bestPrice = 0;
+        int buyGood= -1;
+        int sellGood = -1;
+        for (int i = 1; i < numGoods; i++) {
+            for (int j = 0; j < i; j++) {
+                prices[i][j] = MRS[i][j] * MRS[i][j] * bid.MRS[i][j] * bid.MRS[i][j];
+                prices[i][j] = Math.pow(prices[i][j], 0.5);
+                if (prices[i][j] > bestPrice) {
+                    bestPrice = prices[i][j];
+                    buyGood = i;
+                    sellGood = j;
+                }
+            }
+        }
+        if (buyGood > -1 && sellGood > - 1) {
+            newInvoice[buyGood] = -1;
+            newInvoice[sellGood] = 1;
+        }
+        return new Bid(MRS, newInvoice, allocation);
     }
 
     double getUtility(double[] alloc) {
@@ -172,6 +223,8 @@ public class Trader implements Steppable {
 
         // Consider neighbors MRS and make the best rational
         // offer to one neighbor
-        makeBid(market);
+        postBids(market);
+        System.out.printf("Trader %d has %f of good one and %f of good two.\n", idNum, allocation[0], allocation[1]);
+        printMRS();
     }
 }
