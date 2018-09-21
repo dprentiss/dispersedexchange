@@ -6,6 +6,7 @@ package sim.app.dispersedexchange;
 import sim.util.*;
 import sim.engine.*;
 import sim.field.network.*;
+import java.util.Arrays;
 
 public class Trader implements Steppable {
 
@@ -214,6 +215,10 @@ public class Trader implements Steppable {
         DispersedExchange market = (DispersedExchange)state;
         updateNeighbors(market);
 
+        //System.out.println();
+        //System.out.println(idNum);
+        //System.out.println(Arrays.toString(neighborsIn));
+
         // Check if previuous bid was accepted
         checkPreviousBid(market);
 
@@ -223,7 +228,7 @@ public class Trader implements Steppable {
 
         // Consider neighbors MRS and make the best rational
         // offer to one neighbor
-        postBids(market);
+        //postBids(market);
         System.out.printf("Trader %d has %f of good one and %f of good two.\n", idNum, allocation[0], allocation[1]);
         printMRS();
     }

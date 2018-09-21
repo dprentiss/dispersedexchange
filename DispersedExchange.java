@@ -72,7 +72,7 @@ public class DispersedExchange extends SimState {
         }
         for (int i = 0; i < traderArray.length - 1; i++) {
             traderNet.addEdge(traderArray[i], traderArray[i + 1], null);
-            traderNet.addEdge(traderArray[i + 1], traderArray[1], null);
+            traderNet.addEdge(traderArray[i + 1], traderArray[i], null);
         }
         traderNet.addEdge(traderArray[traderArray.length - 1],
                 traderArray[0], null);
