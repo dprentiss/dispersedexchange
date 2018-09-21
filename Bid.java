@@ -20,10 +20,35 @@ public class Bid {
     // Variables
     public boolean accepted;
 
+    public String toString() {
+        String s = "";
+        for (int i = 0; i < inventory.length; i++) {
+            s += String.format("%6.3f ", inventory[i]);
+        }
+        s += "\n";
+        for (int i = 0; i < inventory.length; i++) {
+            s += String.format("%6.3f ", invoice[i]);
+        }
+        s += "\n";
+        for (int i = 0; i < inventory.length; i++) {
+            if (i == 0 ) {
+                s += "\n" + String.format("%24s", "MRS: ");
+            } else {
+                s += String.format("%24s", " ");
+            }
+            for (int j = 0; j < inventory.length; j++) {
+                s += String.format("%6.3f ", MRS[i][j]);
+            }
+            s += "\n";
+        }
+        return s;
+    }
+
     /** Constructor */
     public Bid(double[][] MRS, double[] invoice, double[] inventory) {
         this.MRS = MRS;
         this.invoice = invoice;
         this.inventory = inventory;
+        this.accepted = false;
     }
 }

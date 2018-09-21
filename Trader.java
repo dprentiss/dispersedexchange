@@ -55,30 +55,7 @@ public class Trader implements Steppable {
         }
     }
 
-    void postBids(DispersedExchange market) {
-        double bestUtility = 0;
-        double tmpUtility;  
-        Bid bestBid = null;
-        Bid tmpBid;
-        int bestBidNum = -1;
-        for (int i = 0; i < neighborsIn.length; i++) {
-            tmpBid = makeBid((Bid)neighborsIn[i].getInfo());
-            tmpUtility = getUtility(tmpBid.invoice);
-            if (tmpUtility > bestUtility) {         
-                bestBid = tmpBid;
-                bestUtility = tmpUtility;
-                bestBidNum = i;
-            }
-        }
-        for (int i = 0; i < neighborsOut.length; i++) {
-            if (i == bestBidNum) {
-                neighborsOut[i].setInfo(bestBid);
-            } else {
-                neighborsOut[i].setInfo(new Bid(MRS, null, allocation));
-            }
-        }
-    }
-
+    /*
     void printMRS() {
         for (int i = 0; i < MRS.length; i++) {
             for (int j = 0; j < MRS.length; j++) {
@@ -88,6 +65,7 @@ public class Trader implements Steppable {
             System.out.println();
         }
     }
+    */
 
     void checkPreviousBid(DispersedExchange market) {
         if (previousBid != null) {
@@ -123,14 +101,19 @@ public class Trader implements Steppable {
     void chooseBid(DispersedExchange market) {
         int bestBidNum = -1;
         double bestUtility = 0;
+        Bid bid;
         for (int i = 0; i < neighborsIn.length; i++) {
-            Bid bid = (Bid)neighborsIn[i].getInfo();
-            if (bid != null) {
-                if (checkInventory(bid.invoice)) {
-                    double tmp = getUtilityChange(bid.invoice);
-                    if (tmp > bestUtility) {
-                        bestBidNum = i;
-                        bestUtility = tmp;
+            if (neighborsIn[i].getInfo() != null) {
+                bid = (Bid)neighborsIn[i].getInfo();
+                if (bid != null) {
+                    if (bid.invoice != null) {
+                        if (checkInventory(bid.invoice)) {
+                            double tmp = getUtilityChange(bid.invoice);
+                            if (tmp > bestUtility) {
+                                bestBidNum = i;
+                                bestUtility = tmp;
+                            }
+                        }
                     }
                 }
             }
@@ -141,16 +124,68 @@ public class Trader implements Steppable {
         }
     }
 
+    void postBids(DispersedExchange market) {
+        double bestUtility = 0;
+        double tmpUtility;  
+        Bid bestBid = null;
+        Bid tmpBid;
+        int bestBidNum = -1;
+        for (int i = 0; i < neighborsIn.length; i++) {
+            if (neighborsIn[i].getInfo() == null) continue;
+            tmpBid = makeBid((Bid)neighborsIn[i].getInfo());
+            tmpUtility = getUtility(tmpBid.invoice);
+            if (tmpUtility > bestUtility) {         
+                bestBid = tmpBid;
+                bestUtility = tmpUtility;
+                bestBidNum = i;
+            }
+        }
+        for (int i = 0; i < neighborsOut.length; i++) {
+            if (i == bestBidNum) {
+                neighborsOut[i].setInfo(bestBid);
+            } else {
+                neighborsOut[i].setInfo(new Bid(MRS, null, allocation));
+            }
+        }
+    }
+
+    void postBidsAlt(DispersedExchange market) {
+        double bestUtility = 0;
+        double tmpUtility;  
+        Bid bestBid = null;
+        Bid tmpBid;
+        int bestBidNum = -1;
+        for (int i = 0; i < neighborsIn.length; i++) {
+            System.out.println();
+            System.out.println(neighborsIn[i].getInfo());
+            if (neighborsIn[i].getInfo() == null) continue;
+            tmpBid = makeBid((Bid)neighborsIn[i].getInfo());
+            tmpUtility = getUtility(tmpBid.invoice);
+            if (tmpUtility > bestUtility) {         
+                bestBid = tmpBid;
+                bestUtility = tmpUtility;
+                bestBidNum = i;
+            }
+        }
+        for (int i = 0; i < neighborsOut.length; i++) {
+            if (i == bestBidNum) {
+                neighborsOut[i].setInfo(bestBid);
+            } else {
+                neighborsOut[i].setInfo(new Bid(MRS, null, allocation));
+            }
+        }
+    }
+
     Bid makeBid(Bid bid) {
+        System.out.print(bid.toString());
         double[] newInvoice = new double[numGoods];
-        double[] maxQuantities = new double[numGoods];
         double[][] prices = new double[numGoods][numGoods];
         double bestPrice = 0;
         int buyGood= -1;
         int sellGood = -1;
         for (int i = 1; i < numGoods; i++) {
-            for (int j = 0; j < i; j++) {
-                prices[i][j] = MRS[i][j] * MRS[i][j] * bid.MRS[i][j] * bid.MRS[i][j];
+            for (int j = 0; j < numGoods; j++) {
+                prices[i][j] = MRS[i][j] * MRS[i][j] * bid.MRS[j][i] * bid.MRS[j][i];
                 prices[i][j] = Math.pow(prices[i][j], 0.5);
                 if (prices[i][j] > bestPrice) {
                     bestPrice = prices[i][j];
@@ -161,7 +196,7 @@ public class Trader implements Steppable {
         }
         if (buyGood > -1 && sellGood > - 1) {
             newInvoice[buyGood] = -1;
-            newInvoice[sellGood] = 1;
+            newInvoice[sellGood] = bestPrice;
         }
         return new Bid(MRS, newInvoice, allocation);
     }
@@ -205,10 +240,31 @@ public class Trader implements Steppable {
         this.endowment = endowment;
         allocation = endowment;
         numGoods = allocation.length;
-        System.out.printf("Trader %d has %f of good one and %f of good two.\n", idNum, allocation[0], allocation[1]);
         MRS = new double[numGoods][numGoods];
         updateMRS();
-        printMRS();
+        System.out.println();
+        System.out.print(this.toString());
+    }
+
+    public String toString() {
+        String s = "";
+        s += "Trader: " + String.format("%2d  ", idNum);
+        s += "Allocation: ";
+        for (int i = 0; i < numGoods; i++) {
+            s += String.format("%6.3f ", allocation[i]);
+        }
+        for (int i = 0; i < numGoods; i++) {
+            if (i == 0 ) {
+                s += "\n" + String.format("%24s", "MRS: ");
+            } else {
+                s += String.format("%24s", " ");
+            }
+            for (int j = 0; j < numGoods; j++) {
+                s += String.format("%6.3f ", MRS[i][j]);
+            }
+            s += "\n";
+        }
+        return s;
     }
 
     public void step(final SimState state) {
@@ -228,8 +284,8 @@ public class Trader implements Steppable {
 
         // Consider neighbors MRS and make the best rational
         // offer to one neighbor
-        //postBids(market);
-        System.out.printf("Trader %d has %f of good one and %f of good two.\n", idNum, allocation[0], allocation[1]);
-        printMRS();
+        postBids(market);
+        System.out.println();
+        System.out.print(this.toString());
     }
 }
