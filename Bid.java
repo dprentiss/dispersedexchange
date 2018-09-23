@@ -22,14 +22,19 @@ public class Bid {
 
     public String toString() {
         String s = "";
+        s += String.format("%24s", "Inventory: ");
         for (int i = 0; i < inventory.length; i++) {
             s += String.format("%6.3f ", inventory[i]);
         }
         s += "\n";
+        s += String.format("%24s", "Invoice: ");
         for (int i = 0; i < inventory.length; i++) {
-            s += String.format("%6.3f ", invoice[i]);
+            if (invoice == null) {
+                s += String.format("%6.3f ", 0.0);
+            } else {
+                s += String.format("%6.3f ", invoice[i]);
+            }
         }
-        s += "\n";
         for (int i = 0; i < inventory.length; i++) {
             if (i == 0 ) {
                 s += "\n" + String.format("%24s", "MRS: ");

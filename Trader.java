@@ -67,16 +67,22 @@ public class Trader implements Steppable {
     }
     */
 
-    void checkPreviousBid(DispersedExchange market) {
-        if (previousBid != null) {
-            Bid bid = (Bid)previousBid.getInfo();
-            if (bid.accepted == true) {
-                for (int i = 0; i < numGoods; i++) {
-                    allocation[i] -= bid.invoice[i];
+    void checkPreviousBids(DispersedExchange market) {
+        Bid bid;
+        for (int i = 0; i < neighborsIn.length; i++) {
+            if (neighborsIn[i].getInfo() != null) {
+                bid = (Bid)neighborsIn[i].getInfo();
+                if (bid != null) {
+                    if (bid.invoice != null) {
+                        if (bid.accepted == true) {
+                            for (int j = 0; j < numGoods; j++) {
+                                allocation[j] -= bid.invoice[j];
+                            }
+                            updateMRS();
+                        }
+                    }
                 }
-                updateMRS();
             }
-            previousBid.setInfo(null);
         }
     }
 
@@ -87,18 +93,20 @@ public class Trader implements Steppable {
         }
         bid.accepted = true;
         neighbor.setInfo(bid);
+        System.out.println("Bid accepted");
+        System.out.print(bid.toString());
     }
 
     boolean checkInventory(double[] invoice) {
-        double[] tmp = new double[numGoods];
+        double tmp;
         for (int i = 0; i < numGoods; i++) {
-            tmp[i] = allocation[i] + invoice[i];
-            if (tmp[i] <= 0) return false;
+            tmp = allocation[i] + invoice[i];
+            if (tmp < 0) return false;
         }
         return true;
     }
 
-    void chooseBid(DispersedExchange market) {
+    void chooseBids(DispersedExchange market) {
         int bestBidNum = -1;
         double bestUtility = 0;
         Bid bid;
@@ -133,7 +141,11 @@ public class Trader implements Steppable {
         for (int i = 0; i < neighborsIn.length; i++) {
             if (neighborsIn[i].getInfo() == null) continue;
             tmpBid = makeBid((Bid)neighborsIn[i].getInfo());
-            tmpUtility = getUtility(tmpBid.invoice);
+            tmpUtility = getUtilityChange(invertInvoice(tmpBid.invoice));
+            System.out.println(Arrays.toString(tmpBid.invoice));
+            System.out.println(getUtility(tmpBid.invoice));
+            System.out.println(Arrays.toString(invertInvoice(tmpBid.invoice)));
+            System.out.println(getUtility(invertInvoice(tmpBid.invoice)));
             if (tmpUtility > bestUtility) {         
                 bestBid = tmpBid;
                 bestUtility = tmpUtility;
@@ -143,8 +155,12 @@ public class Trader implements Steppable {
         for (int i = 0; i < neighborsOut.length; i++) {
             if (i == bestBidNum) {
                 neighborsOut[i].setInfo(bestBid);
+                            System.out.println();
+                            System.out.println("Made bid");
             } else {
                 neighborsOut[i].setInfo(new Bid(MRS, null, allocation));
+                            System.out.println();
+                            System.out.println("Did not bid");
             }
         }
     }
@@ -156,11 +172,11 @@ public class Trader implements Steppable {
         Bid tmpBid;
         int bestBidNum = -1;
         for (int i = 0; i < neighborsIn.length; i++) {
-            System.out.println();
-            System.out.println(neighborsIn[i].getInfo());
+            //System.out.println();
+            //System.out.println(neighborsIn[i].getInfo());
             if (neighborsIn[i].getInfo() == null) continue;
             tmpBid = makeBid((Bid)neighborsIn[i].getInfo());
-            tmpUtility = getUtility(tmpBid.invoice);
+            tmpUtility = getUtility(invertInvoice(tmpBid.invoice));
             if (tmpUtility > bestUtility) {         
                 bestBid = tmpBid;
                 bestUtility = tmpUtility;
@@ -177,15 +193,18 @@ public class Trader implements Steppable {
     }
 
     Bid makeBid(Bid bid) {
+        System.out.println("Bid in:");
         System.out.print(bid.toString());
         double[] newInvoice = new double[numGoods];
+        double[] netInvoice = new double[numGoods];
         double[][] prices = new double[numGoods][numGoods];
         double bestPrice = 0;
         int buyGood= -1;
         int sellGood = -1;
-        for (int i = 1; i < numGoods; i++) {
+        for (int i = 0; i < numGoods; i++) {
             for (int j = 0; j < numGoods; j++) {
-                prices[i][j] = MRS[i][j] * MRS[i][j] * bid.MRS[j][i] * bid.MRS[j][i];
+                if (i == j) continue;
+                prices[i][j] = MRS[i][j] * bid.MRS[j][i];
                 prices[i][j] = Math.pow(prices[i][j], 0.5);
                 if (prices[i][j] > bestPrice) {
                     bestPrice = prices[i][j];
@@ -194,10 +213,25 @@ public class Trader implements Steppable {
                 }
             }
         }
+        System.out.printf("Price: %6.3f\n", bestPrice);
         if (buyGood > -1 && sellGood > - 1) {
-            newInvoice[buyGood] = -1;
-            newInvoice[sellGood] = bestPrice;
+            if (bestPrice > 1.0) {
+                newInvoice[buyGood] = -1.0;
+                newInvoice[sellGood] = bestPrice;
+            } else {
+                newInvoice[buyGood] = 1.0 / bestPrice;
+                newInvoice[sellGood] = -1.0;
+            }
         }
+        System.out.println("Bid out:");
+        System.out.printf("Utility change: %f\n", getUtilityChange(invertInvoice(newInvoice)));
+        if (getUtilityChange(invertInvoice(newInvoice)) <= 0.0) {
+            for (int i = 0; i < numGoods; i++) {
+                newInvoice[i] = 0.0;
+            }
+        }
+        Bid newBid = new Bid(MRS, newInvoice, allocation);
+        System.out.print(newBid.toString());
         return new Bid(MRS, newInvoice, allocation);
     }
 
@@ -219,6 +253,14 @@ public class Trader implements Steppable {
             tmp[i] = allocation[i] + invoice[i];
         }
         return getUtility(tmp) - getUtility();
+    }
+
+    double[] invertInvoice(double[] invoice) {
+        double[] tmp = new double[numGoods];
+        for (int i = 0; i < numGoods; i++) {
+            tmp[i] = 0.0 - invoice[i];
+        }
+        return tmp;
     }
 
     /*
@@ -276,16 +318,16 @@ public class Trader implements Steppable {
         //System.out.println(Arrays.toString(neighborsIn));
 
         // Check if previuous bid was accepted
-        checkPreviousBid(market);
+        checkPreviousBids(market);
 
         // Consider offers from neighbors during the previous round
         // and accept the best rational, affordable bid
-        chooseBid(market);
+        chooseBids(market);
 
         // Consider neighbors MRS and make the best rational
         // offer to one neighbor
-        postBids(market);
         System.out.println();
         System.out.print(this.toString());
+        postBids(market);
     }
 }
