@@ -71,7 +71,7 @@ public class Trader implements Steppable {
         Bid bid;
         for (int i = 0; i < neighborsIn.length; i++) {
             if (neighborsIn[i].getInfo() != null) {
-                bid = (Bid)neighborsIn[i].getInfo();
+                bid = (Bid)neighborsOut[i].getInfo();
                 if (bid != null) {
                     if (bid.invoice != null) {
                         if (bid.accepted == true) {
@@ -79,6 +79,7 @@ public class Trader implements Steppable {
                                 allocation[j] -= bid.invoice[j];
                             }
                             updateMRS();
+                            System.out.print(this.toString());
                         }
                     }
                 }
@@ -93,7 +94,6 @@ public class Trader implements Steppable {
         }
         bid.accepted = true;
         neighbor.setInfo(bid);
-        System.out.println("Bid accepted");
         System.out.print(bid.toString());
     }
 
@@ -129,6 +129,7 @@ public class Trader implements Steppable {
         if (bestBidNum > -1) {
             acceptBid(neighborsIn[bestBidNum]);
             updateMRS();
+            System.out.print(this.toString());
         }
     }
 
@@ -142,10 +143,12 @@ public class Trader implements Steppable {
             if (neighborsIn[i].getInfo() == null) continue;
             tmpBid = makeBid((Bid)neighborsIn[i].getInfo());
             tmpUtility = getUtilityChange(invertInvoice(tmpBid.invoice));
+            /*
             System.out.println(Arrays.toString(tmpBid.invoice));
-            System.out.println(getUtility(tmpBid.invoice));
+            System.out.println(getUtilityChange(tmpBid.invoice));
             System.out.println(Arrays.toString(invertInvoice(tmpBid.invoice)));
-            System.out.println(getUtility(invertInvoice(tmpBid.invoice)));
+            System.out.println(getUtilityChange(invertInvoice(tmpBid.invoice)));
+            */
             if (tmpUtility > bestUtility) {         
                 bestBid = tmpBid;
                 bestUtility = tmpUtility;
@@ -215,16 +218,22 @@ public class Trader implements Steppable {
         }
         System.out.printf("Price: %6.3f\n", bestPrice);
         if (buyGood > -1 && sellGood > - 1) {
-            if (bestPrice > 1.0) {
-                newInvoice[buyGood] = -1.0;
-                newInvoice[sellGood] = bestPrice;
-            } else {
-                newInvoice[buyGood] = 1.0 / bestPrice;
+            if (bestPrice < 1.0) {
                 newInvoice[sellGood] = -1.0;
+                newInvoice[buyGood] = bestPrice;
+            } else {
+                newInvoice[sellGood] = 1.0 / bestPrice;
+                newInvoice[buyGood] = -1.0;
             }
         }
+        /*
         System.out.println("Bid out:");
+        System.out.print(Arrays.toString(newInvoice));
+        System.out.println("\n");
+        System.out.print(Arrays.toString(invertInvoice(newInvoice)));
+        System.out.println("\n");
         System.out.printf("Utility change: %f\n", getUtilityChange(invertInvoice(newInvoice)));
+        */
         if (getUtilityChange(invertInvoice(newInvoice)) <= 0.0) {
             for (int i = 0; i < numGoods; i++) {
                 newInvoice[i] = 0.0;
