@@ -13,6 +13,7 @@ public class Bid {
     private static final long serialVersionUID = 1;
     
     // Properties
+    public final Trader trader;
     public final double[][] MRS;
     public final double[] invoice;
     public final double[] inventory;
@@ -22,6 +23,10 @@ public class Bid {
 
     public String toString() {
         String s = "";
+        s += String.format("%24s%6d", "Trader: ", trader.idNum);
+        s += "\n";
+        s += String.format("%24s%6s", "Accepted: ", accepted);
+        s += "\n";
         s += String.format("%24s", "Inventory: ");
         for (int i = 0; i < inventory.length; i++) {
             s += String.format("%6.3f ", inventory[i]);
@@ -50,7 +55,8 @@ public class Bid {
     }
 
     /** Constructor */
-    public Bid(double[][] MRS, double[] invoice, double[] inventory) {
+    public Bid(Trader trader, double[][] MRS, double[] invoice, double[] inventory) {
+        this.trader = trader;
         this.MRS = MRS;
         this.invoice = invoice;
         this.inventory = inventory;

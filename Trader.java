@@ -17,6 +17,7 @@ public class Trader implements Steppable {
     Stoppable stopper;
 
     // Properties
+    public final boolean verbose = false;
     public final int idNum;
 
     // Variables
@@ -27,6 +28,8 @@ public class Trader implements Steppable {
     Edge[] neighborsIn;
     Edge[] neighborsOut;
     Edge previousBid;
+    public long lastTradeStep = -1; 
+    public boolean hasTraded;
 
     // Accessors
     double getAllocation(int good) {
@@ -55,18 +58,6 @@ public class Trader implements Steppable {
         }
     }
 
-    /*
-    void printMRS() {
-        for (int i = 0; i < MRS.length; i++) {
-            for (int j = 0; j < MRS.length; j++) {
-                System.out.print(MRS[i][j]);
-                System.out.print(" ");
-            }
-            System.out.println();
-        }
-    }
-    */
-
     void checkPreviousBids(DispersedExchange market) {
         Bid bid;
         for (int i = 0; i < neighborsIn.length; i++) {
@@ -79,7 +70,11 @@ public class Trader implements Steppable {
                                 allocation[j] -= bid.invoice[j];
                             }
                             updateMRS();
-                            System.out.print(this.toString());
+                            hasTraded = true;
+                            if (verbose) {
+                                System.out.println("Previous bid accepted:");
+                                System.out.print(bid.toString());
+                            }
                         }
                     }
                 }
@@ -94,14 +89,23 @@ public class Trader implements Steppable {
         }
         bid.accepted = true;
         neighbor.setInfo(bid);
+        updateMRS();
+        hasTraded = true;
+        /*
+        System.out.println("Bid accepted:");
         System.out.print(bid.toString());
+        */
     }
 
     boolean checkInventory(double[] invoice) {
         double tmp;
         for (int i = 0; i < numGoods; i++) {
             tmp = allocation[i] + invoice[i];
-            if (tmp < 0) return false;
+            if (tmp < 0) {
+                System.out.println();
+                System.out.printf("***Invoice check failed for good %d with balance %f***\n", i, tmp);
+                return false;
+            }
         }
         return true;
     }
@@ -117,6 +121,10 @@ public class Trader implements Steppable {
                     if (bid.invoice != null) {
                         if (checkInventory(bid.invoice)) {
                             double tmp = getUtilityChange(bid.invoice);
+                            if (verbose) {
+                                System.out.print(bid.toString());
+                                System.out.printf("%24s%6.3f\n", "Bid utility Change: ", tmp);
+                            }
                             if (tmp > bestUtility) {
                                 bestBidNum = i;
                                 bestUtility = tmp;
@@ -128,8 +136,6 @@ public class Trader implements Steppable {
         }
         if (bestBidNum > -1) {
             acceptBid(neighborsIn[bestBidNum]);
-            updateMRS();
-            System.out.print(this.toString());
         }
     }
 
@@ -158,12 +164,17 @@ public class Trader implements Steppable {
         for (int i = 0; i < neighborsOut.length; i++) {
             if (i == bestBidNum) {
                 neighborsOut[i].setInfo(bestBid);
-                            System.out.println();
-                            System.out.println("Made bid");
+                if (verbose) {
+                    System.out.println();
+                    System.out.println("Made bid:");
+                    System.out.println(bestBid.toString());
+                }
             } else {
-                neighborsOut[i].setInfo(new Bid(MRS, null, allocation));
+                neighborsOut[i].setInfo(new Bid(this, MRS, null, allocation));
+                /*
                             System.out.println();
                             System.out.println("Did not bid");
+                            */
             }
         }
     }
@@ -190,14 +201,16 @@ public class Trader implements Steppable {
             if (i == bestBidNum) {
                 neighborsOut[i].setInfo(bestBid);
             } else {
-                neighborsOut[i].setInfo(new Bid(MRS, null, allocation));
+                neighborsOut[i].setInfo(new Bid(this, MRS, null, allocation));
             }
         }
     }
 
     Bid makeBid(Bid bid) {
-        System.out.println("Bid in:");
-        System.out.print(bid.toString());
+        if (verbose) {
+            System.out.println("Bid in:");
+            System.out.print(bid.toString());
+        }
         double[] newInvoice = new double[numGoods];
         double[] netInvoice = new double[numGoods];
         double[][] prices = new double[numGoods][numGoods];
@@ -216,7 +229,9 @@ public class Trader implements Steppable {
                 }
             }
         }
-        System.out.printf("Price: %6.3f\n", bestPrice);
+        if (verbose) {
+            System.out.printf("%24s%6.3f\n", "Price: ", bestPrice);
+        }
         if (buyGood > -1 && sellGood > - 1) {
             if (bestPrice < 1.0) {
                 newInvoice[sellGood] = -1.0;
@@ -239,9 +254,9 @@ public class Trader implements Steppable {
                 newInvoice[i] = 0.0;
             }
         }
-        Bid newBid = new Bid(MRS, newInvoice, allocation);
-        System.out.print(newBid.toString());
-        return new Bid(MRS, newInvoice, allocation);
+        Bid newBid = new Bid(this, MRS, newInvoice, allocation);
+        //System.out.print(newBid.toString());
+        return new Bid(this, MRS, newInvoice, allocation);
     }
 
     double getUtility(double[] alloc) {
@@ -289,7 +304,7 @@ public class Trader implements Steppable {
     public Trader(int id, double[] endowment) {
         this.idNum = id;
         this.endowment = endowment;
-        allocation = endowment;
+        allocation = endowment.clone();
         numGoods = allocation.length;
         MRS = new double[numGoods][numGoods];
         updateMRS();
@@ -320,23 +335,58 @@ public class Trader implements Steppable {
 
     public void step(final SimState state) {
         DispersedExchange market = (DispersedExchange)state;
+        long steps = market.schedule.getSteps();
+        long seed  = market.seed();
+        
         updateNeighbors(market);
+        hasTraded = false;
 
-        //System.out.println();
-        //System.out.println(idNum);
-        //System.out.println(Arrays.toString(neighborsIn));
+        System.out.println();
+        System.out.println("************************************************************************");
+        System.out.printf("Seed: %d, Step: %d, Trader: %d\n", seed, steps,
+                idNum);
+        System.out.printf("Endowment: %s\n", Arrays.toString(this.endowment));
+        //System.out.printf("Allocation: %s\n", Arrays.toString(this.allocation));
+        System.out.printf("Last traded: %d\n", lastTradeStep);
+        System.out.println("************************************************************************");
+        System.out.println(this.toString());
 
         // Check if previuous bid was accepted
+        
+        if (verbose) {
+            System.out.println();
+            System.out.println("***Check previous bids***");
+        }
         checkPreviousBids(market);
+        if (verbose) {
+            System.out.println("*************************");
+        }
 
         // Consider offers from neighbors during the previous round
         // and accept the best rational, affordable bid
+        if (verbose) {
+            System.out.println();
+            System.out.println("***Choose bids***");
+        }
         chooseBids(market);
+        if (verbose) {
+            System.out.println("*****************");
+        }
+
 
         // Consider neighbors MRS and make the best rational
         // offer to one neighbor
-        System.out.println();
-        System.out.print(this.toString());
+        if (verbose) {
+            System.out.println();
+            System.out.println("***Post bids***");
+        }
         postBids(market);
+        if (verbose) {
+            System.out.println("*****************");
+            System.out.println();
+            System.out.print(this.toString());
+        }
+
+        if (hasTraded) lastTradeStep = steps;
     }
 }
