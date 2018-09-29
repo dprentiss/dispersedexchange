@@ -341,6 +341,7 @@ public class Trader implements Steppable {
         updateNeighbors(market);
         hasTraded = false;
 
+        /*
         System.out.println();
         System.out.println("************************************************************************");
         System.out.printf("Seed: %d, Step: %d, Trader: %d\n", seed, steps,
@@ -350,6 +351,7 @@ public class Trader implements Steppable {
         System.out.printf("Last traded: %d\n", lastTradeStep);
         System.out.println("************************************************************************");
         System.out.println(this.toString());
+        */
 
         // Check if previuous bid was accepted
         
