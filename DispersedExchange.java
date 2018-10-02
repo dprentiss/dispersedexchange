@@ -90,21 +90,6 @@ public class DispersedExchange extends SimState {
     public void start() {
         super.start();
         
-        /*
-        traderNet = new Network(true);
-        for (int i = 0; i < traderArray.length; i++) {
-            traderNet.addNode(traderArray[i]);
-        }
-        for (int i = 0; i < traderArray.length - 1; i++) {
-            traderNet.addEdge(traderArray[i], traderArray[i + 1], null);
-            traderNet.addEdge(traderArray[i + 1], traderArray[i], null);
-        }
-        traderNet.addEdge(traderArray[traderArray.length - 1],
-                traderArray[0], null);
-        traderNet.addEdge(traderArray[0],
-                traderArray[traderArray.length - 1], null);
-                */
-
         Steppable checkActivity = new Steppable() {
             public void step(final SimState state) {
                 DispersedExchange market = (DispersedExchange)state;
