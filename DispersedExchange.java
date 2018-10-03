@@ -94,6 +94,7 @@ public class DispersedExchange extends SimState {
     public void start() {
         super.start();
 
+        roundNum = 0;
         setEndowments();
         initNetwork();
 
