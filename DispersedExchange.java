@@ -17,7 +17,10 @@ public class DispersedExchange extends SimState {
     // Grid dimensions
     public final int numAgents;
     public final int numGoods;
-
+    public int maxEdges;
+    public int roundNum = 1;
+    public double[] wealthChange;
+    public double[] prices;
     public Network traderNet = null;
 
     // Array of Traders
@@ -28,7 +31,7 @@ public class DispersedExchange extends SimState {
 
     /** Constructor default */
     public DispersedExchange(long seed) {
-        this(seed, 10, 2);
+        this(seed, 8, 2);
     }
     
     /** Constructor */
@@ -39,6 +42,7 @@ public class DispersedExchange extends SimState {
         this.numAgents = agents;
         traderArray = new Trader[numAgents];
         numGoods = goods;
+        maxEdges = ((numAgents * (numAgents-1)) / 2) - numAgents;
     }
 
     //Fisher-Yates array shuffle
@@ -89,7 +93,14 @@ public class DispersedExchange extends SimState {
     
     public void start() {
         super.start();
-        
+
+        setEndowments();
+        initNetwork();
+
+        for (int i = 0; i < traderArray.length; i++) {
+            traderArray[i].stopper = schedule.scheduleRepeating(traderArray[i]);
+        }
+
         Steppable checkActivity = new Steppable() {
             public void step(final SimState state) {
                 DispersedExchange market = (DispersedExchange)state;
@@ -98,16 +109,28 @@ public class DispersedExchange extends SimState {
                     if (traderArray[i].hasTraded) hasTraded = true;
                 }
                 if (schedule.getSteps() > 2 && !hasTraded) {
-                    market.finish();
+                    if (roundNum < maxEdges) {
+                        roundNum++;
+                        nextRound(market);
+                    } else {
+                        market.finish();
+                    }
                 }
             }
         };
 
-        for (int i = 0; i < traderArray.length; i++) {
-            traderArray[i].stopper = schedule.scheduleRepeating(traderArray[i]);
-        }
         schedule.scheduleRepeating(checkActivity, 1, 1);
+    }
 
+    public void nextRound(DispersedExchange market) {
+            prices = prices();
+            wealthChange = getWealthChanges(prices);
+            System.out.println(roundNum);
+            printMRS();
+            System.out.println(Arrays.toString(prices()));
+            System.out.println(Arrays.toString(getWealthChanges(prices())));
+            updateNetwork(market, wealthChange);
+            resetTraders();
     }
 
     public void printMRS() {
@@ -220,36 +243,7 @@ public class DispersedExchange extends SimState {
 
     /** Main */
     public static void main(String[] args) {
-        //doLoop(DispersedExchange.class, args);
-        DispersedExchange state = new DispersedExchange(System.currentTimeMillis());
-        //DispersedExchange state = new DispersedExchange(0);
-        int maxEdges = ((state.numAgents * (state.numAgents-1)) / 2) - state.numAgents;
-        double[] wealthChange;
-        double[] prices;
-        state.setEndowments();
-        state.initNetwork();
-        state.start();
-        while (true) if (!state.schedule.step(state)) break;
-        prices = state.prices();
-        wealthChange = state.getWealthChanges(prices);
-        state.printMRS();
-        System.out.println(Arrays.toString(prices));
-        System.out.println(Arrays.toString(wealthChange));
-
-        for (int i = 0; i < maxEdges; i++) {
-            state.updateNetwork(state, wealthChange);
-            state.resetTraders();
-            state.start();
-            while (true) if (!state.schedule.step(state)) break;
-            prices = state.prices();
-            wealthChange = state.getWealthChanges(prices);
-            state.printMRS();
-            System.out.println(Arrays.toString(state.prices()));
-            System.out.println(Arrays.toString(state.getWealthChanges(state.prices())));
-            System.out.println(i + state.numAgents + 1);
-            //System.out.println(Arrays.deepToString(state.traderNet.getAdjacencyMatrix()));
-        }
-
+        doLoop(DispersedExchange.class, args);
         System.exit(0);
     }
 }
