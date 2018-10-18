@@ -8,30 +8,44 @@ import sim.util.*;
 import sim.field.continuous.*;
 import sim.field.network.*;
 import java.util.Arrays;
+import java.nio.file.*;
 
 public class DispersedExchange extends SimState {
 
     // Required for serialization
     private static final long serialVersionUID = 1;
 
-    // Grid dimensions
+    //// Dimensions
+
     public final int numAgents;
     public final int numGoods;
-    public int maxEdges;
-    public int roundNum = 1;
-    public double[] wealthChange;
-    public double[] prices;
-    public Network traderNet = null;
+    final int maxEdges;
+
+    //// Properties
 
     // Array of Traders
     Trader[] traderArray;
-
-    // Grid of agent locations
+    // Graph of Traders
+    public Network traderNet = null;
+    // Field of Trader position in Portrayal
     public Continuous2D traderField = new Continuous2D(1.0, 100, 100);
+
+    // Variables
+    public double[] wealthChange;
+    public double[] prices;
+    public int roundNum = 1;
+
+    // Accesors
+
+    // toString
+    static final int NONE = 0;
+    static final int PRICES = 1;
+    static final int WEALTH = 2;
+    static final int ROUND = 3;
 
     /** Constructor default */
     public DispersedExchange(long seed) {
-        this(seed, 16, 2);
+        this(seed, 32, 2);
     }
 
     /** Constructor */
@@ -43,37 +57,6 @@ public class DispersedExchange extends SimState {
         traderArray = new Trader[numAgents];
         numGoods = goods;
         maxEdges = ((numAgents * (numAgents-1)) / 2) - numAgents;
-    }
-
-    //Fisher-Yates array shuffle
-    private void shuffleArray(double[] array) {
-        int index;
-        double tmp;
-        for (int i = array.length - 1; i > 0; i--) {
-            index = random.nextInt(i + 1);
-            tmp = array[index];
-            array[index] = array[i];
-            array[i] = tmp;
-        }
-    }
-
-    void setEndowments() {
-        double[] endowments = new double[numAgents];
-        for (int i = 0; i < endowments.length; i = i+2) {
-            endowments[i] = random.nextDouble(false, false) * 100;
-            endowments[i+1] = 100 - endowments[i];
-        }
-        shuffleArray(endowments);
-        for (int i = 0; i < numAgents; i++) {
-            traderArray[i] = new Trader(i, new double[]{endowments[i], 100 - endowments[i]});
-        }
-    }
-
-    void resetTraders() {
-        for (int i =0; i < traderArray.length; i++) {
-            traderArray[i].allocation = traderArray[i].endowment.clone();
-            traderArray[i].lastTradeStep = -1;
-        }
     }
 
     void initNetwork() {
@@ -107,19 +90,39 @@ public class DispersedExchange extends SimState {
         }
     }
 
-    public void start() {
-        super.start();
-
-        roundNum = 0;
-        setEndowments();
-        initNetwork();
-        initField();
-
-        for (int i = 0; i < traderArray.length; i++) {
-            traderArray[i].stopper = schedule.scheduleRepeating(traderArray[i]);
+    //Fisher-Yates array shuffle
+    private void shuffleArray(double[] array) {
+        int index;
+        double tmp;
+        for (int i = array.length - 1; i > 0; i--) {
+            index = random.nextInt(i + 1);
+            tmp = array[index];
+            array[index] = array[i];
+            array[i] = tmp;
         }
+    }
 
-        Steppable checkActivity = new Steppable() {
+    void setEndowments() {
+        double[] endowments = new double[numAgents];
+        for (int i = 0; i < endowments.length; i = i+2) {
+            endowments[i] = random.nextDouble(false, false) * 100;
+            endowments[i+1] = 100 - endowments[i];
+        }
+        shuffleArray(endowments);
+        for (int i = 0; i < numAgents; i++) {
+            traderArray[i] =
+                new Trader(i,new double[]{endowments[i], 100 - endowments[i]});
+        }
+    }
+
+    void resetTraders() {
+        for (int i =0; i < traderArray.length; i++) {
+            traderArray[i].allocation = traderArray[i].endowment.clone();
+            traderArray[i].lastTradeStep = -1;
+        }
+    }
+
+    Steppable checkActivity = new Steppable() {
             public void step(final SimState state) {
                 DispersedExchange market = (DispersedExchange)state;
                 boolean hasTraded = false;
@@ -137,26 +140,32 @@ public class DispersedExchange extends SimState {
             }
         };
 
+    public void start() {
+        super.start();
+
+        roundNum = 0;
+        setEndowments();
+        initNetwork();
+        initField();
+
+        for (int i = 0; i < traderArray.length; i++) {
+            traderArray[i].stopper = schedule.scheduleRepeating(traderArray[i]);
+        }
+
         schedule.scheduleRepeating(checkActivity, 1, 1);
     }
 
     public void nextRound(DispersedExchange market) {
             prices = prices();
             wealthChange = getWealthChanges(prices);
-            System.out.println(roundNum);
-            printMRS();
-            System.out.println(Arrays.toString(prices()));
-            System.out.println(Arrays.toString(getWealthChanges(prices())));
+            //System.out.print(toString(ROUND));
+            try {
+                Files.write(Paths.get("wealthChange.txt"),
+                            (getWealthString() + "\n").getBytes(),
+                            StandardOpenOption.APPEND);
+            } catch (Exception e) {}
             updateNetwork(market, wealthChange);
             resetTraders();
-    }
-
-    public void printMRS() {
-        StringBuilder s = new StringBuilder();
-        for (int i = 0; i < traderArray.length; i++) {
-            s.append(String.format("%6.3f, ", traderArray[i].MRS[0][1]));
-        }
-        System.out.println(s.toString());
     }
 
     double[] prices() {
@@ -258,6 +267,70 @@ public class DispersedExchange extends SimState {
         System.out.println(Arrays.toString(wealth));
         */
     }
+
+    //System.out.println(roundNum);
+    //printMRS();
+    //System.out.println(Arrays.toString(prices()));
+    //System.out.println(Arrays.toString(getWealthChanges(prices())));
+    public String toString(int option) {
+        StringBuilder s = new StringBuilder();
+        switch (option) {
+        case NONE:
+            s.append(String.format("Round: %d", roundNum));
+            break;
+        case ROUND:
+            s.append(getPriceString());
+            s.append("\n");
+            s.append(getMRSString());
+            s.append("\n");
+            s.append(getWealthString());
+            s.append("\n");
+            s.append("\n");
+            break;
+        }
+        return s.toString();
+    }
+
+    public String toString() {
+        return toString(NONE);
+    }
+
+    private String getMRSString() {
+        StringBuilder s = new StringBuilder();
+        s.append(String.format("%4.2f", traderArray[0].MRS[0][1]));
+        for (int i = 1; i < traderArray.length; i++) {
+            s.append(String.format(", %4.2f", traderArray[i].MRS[0][1]));
+        }
+        return s.toString();
+    }
+
+    private String getPriceString() {
+        StringBuilder s = new StringBuilder();
+        s.append(String.format("%5.3f", prices[0]));
+        for (int i = 1; i < prices.length; i++) {
+            s.append(String.format(", %5.3f", prices[i]));
+        }
+        return s.toString();
+    }
+
+    private String getWealthString() {
+        double[] wealth = getWealthChanges(prices());
+        StringBuilder s = new StringBuilder();
+        s.append(String.format("%4.2f", wealth[0]));
+        for (int i = 1; i < wealth.length; i++) {
+            s.append(String.format(", %4.2f", wealth[i]));
+        }
+        return s.toString();
+    }
+    /*
+    public void printMRS() {
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < traderArray.length; i++) {
+            s.append(String.format("%6.3f, ", traderArray[i].MRS[0][1]));
+        }
+        System.out.println(s.toString());
+    }
+    */
 
     /** Main */
     public static void main(String[] args) {
