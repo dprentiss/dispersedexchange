@@ -7,6 +7,7 @@ package sim.app.dispersedexchange;
 import sim.engine.*;
 import sim.display.*;
 import sim.util.*;
+import sim.portrayal.network.*;
 import sim.portrayal.continuous.*;
 import sim.portrayal.simple.*;
 import java.awt.*;
@@ -17,6 +18,7 @@ public class DispersedExchangeWithUI extends GUIState {
     public Display2D display;
     public JFrame displayFrame;
     ContinuousPortrayal2D fieldPortrayal = new ContinuousPortrayal2D();
+    NetworkPortrayal2D networkPortrayal = new NetworkPortrayal2D();
 
     public static void main(String[] args) {
         new DispersedExchangeWithUI().createController();
@@ -38,6 +40,10 @@ public class DispersedExchangeWithUI extends GUIState {
         fieldPortrayal.setField(market.traderField);
         fieldPortrayal.setPortrayalForAll(new OvalPortrayal2D());
 
+        networkPortrayal.setField(new SpatialNetwork2D(market.traderField,
+                                                       market.traderNet));
+        networkPortrayal.setPortrayalForAll(new SimpleEdgePortrayal2D());
+
         display.reset();
         display.repaint();
         display.setBackdrop(Color.white);
@@ -56,12 +62,13 @@ public class DispersedExchangeWithUI extends GUIState {
     public void init(Controller c) {
         super.init(c);
 
-        display = new Display2D(400,400,this);
+        display = new Display2D(400, 400, this);
         displayFrame = display.createFrame();
         c.registerFrame(displayFrame);
         displayFrame.setVisible(true);
 
         display.attach(fieldPortrayal, "Field");
+        display.attach(networkPortrayal, "Traders");
 
     }
 
