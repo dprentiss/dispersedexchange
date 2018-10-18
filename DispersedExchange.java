@@ -5,7 +5,7 @@
 package sim.app.dispersedexchange;
 import sim.engine.*;
 import sim.util.*;
-import sim.field.grid.*;
+import sim.field.continuous.*;
 import sim.field.network.*;
 import java.util.Arrays;
 
@@ -27,13 +27,13 @@ public class DispersedExchange extends SimState {
     Trader[] traderArray;
 
     // Grid of agent locations
-    public ObjectGrid2D traderGrid;
+    public Continuous2D traderField = new Continuous2D(1.0, 100, 100);
 
     /** Constructor default */
     public DispersedExchange(long seed) {
         this(seed, 8, 2);
     }
-    
+
     /** Constructor */
     public DispersedExchange(long seed, int agents, int goods) {
         // Required by SimState
@@ -48,7 +48,7 @@ public class DispersedExchange extends SimState {
     //Fisher-Yates array shuffle
     private void shuffleArray(double[] array) {
         int index;
-        double tmp; 
+        double tmp;
         for (int i = array.length - 1; i > 0; i--) {
             index = random.nextInt(i + 1);
             tmp = array[index];
@@ -90,13 +90,25 @@ public class DispersedExchange extends SimState {
         traderNet.addEdge(traderArray[0],
                 traderArray[traderArray.length - 1], null);
     }
-    
+
+    void initField() {
+        double y = traderField.getHeight() * 0.5;
+        double x;
+        for (int i = 0; i < traderArray.length; i++) {
+            x = traderField.getWidth() * 1.0 / traderArray.length;
+            x = x * i;
+            traderField.setObjectLocation(traderArray[i],
+                                          new Double2D(x, y));
+        }
+    }
+
     public void start() {
         super.start();
 
         roundNum = 0;
         setEndowments();
         initNetwork();
+        initField();
 
         for (int i = 0; i < traderArray.length; i++) {
             traderArray[i].stopper = schedule.scheduleRepeating(traderArray[i]);
@@ -137,7 +149,7 @@ public class DispersedExchange extends SimState {
     public void printMRS() {
         StringBuilder s = new StringBuilder();
         for (int i = 0; i < traderArray.length; i++) {
-            s.append(String.format("%6.3f, ", traderArray[i].MRS[0][1])); 
+            s.append(String.format("%6.3f, ", traderArray[i].MRS[0][1]));
         }
         System.out.println(s.toString());
     }
@@ -154,12 +166,12 @@ public class DispersedExchange extends SimState {
         }
         return prices;
     }
-    
+
     double wealth(double[] allocation, double[] prices) {
-        double wealth = 0; 
+        double wealth = 0;
         for (int i = 0; i < numGoods; i++) {
             wealth += allocation[i] * prices[i];
-        }   
+        }
         return wealth;
     }
 
@@ -201,7 +213,7 @@ public class DispersedExchange extends SimState {
 
             // ignore neighbors, self, and fully connected nodes
             for (int i = 0; i < worstTrader.neighborsIn.length; i++) {
-                neighborNum = 
+                neighborNum =
                     ((Trader)worstTrader.neighborsIn[i].getFrom()).idNum;
                 wealth[neighborNum] = Double.POSITIVE_INFINITY;
             }
@@ -217,7 +229,7 @@ public class DispersedExchange extends SimState {
                         }
             }
             nextTrader = traderArray[nextTraderNum];
-           
+
             // skip new neighbor if already fully connected
             if (nextTrader.neighborsIn.length == numAgents - 1) {
                 wealth[nextTraderNum] = Double.POSITIVE_INFINITY;

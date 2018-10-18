@@ -12,7 +12,7 @@ public class Trader implements Steppable {
 
     // Required by MASON for serialization
     private static final long serialVersionUID = 1;
-    
+
     // Stopper
     Stoppable stopper;
 
@@ -28,7 +28,7 @@ public class Trader implements Steppable {
     Edge[] neighborsIn;
     Edge[] neighborsOut;
     Edge previousBid;
-    public long lastTradeStep = -1; 
+    public long lastTradeStep = -1;
     public boolean hasTraded;
 
     // Accessors
@@ -141,7 +141,7 @@ public class Trader implements Steppable {
 
     void postBids(DispersedExchange market) {
         double bestUtility = 0;
-        double tmpUtility;  
+        double tmpUtility;
         Bid bestBid = null;
         Bid tmpBid;
         int bestBidNum = -1;
@@ -155,7 +155,7 @@ public class Trader implements Steppable {
             System.out.println(Arrays.toString(invertInvoice(tmpBid.invoice)));
             System.out.println(getUtilityChange(invertInvoice(tmpBid.invoice)));
             */
-            if (tmpUtility > bestUtility) {         
+            if (tmpUtility > bestUtility) {
                 bestBid = tmpBid;
                 bestUtility = tmpUtility;
                 bestBidNum = i;
@@ -181,7 +181,7 @@ public class Trader implements Steppable {
 
     void postBidsAlt(DispersedExchange market) {
         double bestUtility = 0;
-        double tmpUtility;  
+        double tmpUtility;
         Bid bestBid = null;
         Bid tmpBid;
         int bestBidNum = -1;
@@ -191,7 +191,7 @@ public class Trader implements Steppable {
             if (neighborsIn[i].getInfo() == null) continue;
             tmpBid = makeBid((Bid)neighborsIn[i].getInfo());
             tmpUtility = getUtility(invertInvoice(tmpBid.invoice));
-            if (tmpUtility > bestUtility) {         
+            if (tmpUtility > bestUtility) {
                 bestBid = tmpBid;
                 bestUtility = tmpUtility;
                 bestBidNum = i;
@@ -337,7 +337,7 @@ public class Trader implements Steppable {
         DispersedExchange market = (DispersedExchange)state;
         long steps = market.schedule.getSteps();
         long seed  = market.seed();
-        
+
         updateNeighbors(market);
         hasTraded = false;
 
@@ -354,7 +354,7 @@ public class Trader implements Steppable {
         */
 
         // Check if previuous bid was accepted
-        
+
         if (verbose) {
             System.out.println();
             System.out.println("***Check previous bids***");
