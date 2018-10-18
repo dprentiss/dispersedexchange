@@ -31,7 +31,7 @@ public class DispersedExchange extends SimState {
 
     /** Constructor default */
     public DispersedExchange(long seed) {
-        this(seed, 8, 2);
+        this(seed, 16, 2);
     }
 
     /** Constructor */
@@ -92,11 +92,16 @@ public class DispersedExchange extends SimState {
     }
 
     void initField() {
-        double y = traderField.getHeight() * 0.5;
+        double theta = 0;
+        double r = traderField.getWidth() * 0.45;
+        double xC = traderField.getWidth() / 2.0;
+        double yC = traderField.getHeight() / 2.0;
+        double y;
         double x;
         for (int i = 0; i < traderArray.length; i++) {
-            x = traderField.getWidth() * 1.0 / traderArray.length;
-            x = x * i;
+            theta = 2 * Math.PI * i / traderArray.length;
+            x = xC + r * Math.cos(theta);
+            y = yC + r * Math.sin(theta);
             traderField.setObjectLocation(traderArray[i],
                                           new Double2D(x, y));
         }
