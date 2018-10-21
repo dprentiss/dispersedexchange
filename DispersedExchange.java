@@ -33,6 +33,7 @@ public class DispersedExchange extends SimState {
     // Variables
     public double[] wealthChange;
     public double[] prices;
+    public double[] totals;
     public int roundNum = 1;
 
     // Accesors
@@ -45,7 +46,7 @@ public class DispersedExchange extends SimState {
 
     /** Constructor default */
     public DispersedExchange(long seed) {
-        this(seed, 32, 2);
+        this(seed, 16, 2);
     }
 
     /** Constructor */
@@ -56,6 +57,7 @@ public class DispersedExchange extends SimState {
         this.numAgents = agents;
         traderArray = new Trader[numAgents];
         numGoods = goods;
+        totals = new double[numGoods];
         maxEdges = ((numAgents * (numAgents-1)) / 2) - numAgents;
     }
 
@@ -111,7 +113,13 @@ public class DispersedExchange extends SimState {
         shuffleArray(endowments);
         for (int i = 0; i < numAgents; i++) {
             traderArray[i] =
-                new Trader(i,new double[]{endowments[i], 100 - endowments[i]});
+               new Trader(i,new double[]{endowments[i], 100 - endowments[i]});
+        }
+        // set good totals
+        for (int i = 0; i < numGoods; i++) {
+            for (int j = 0; j < numAgents; j++) {
+                totals[i] += traderArray[j].endowment[i];
+            }
         }
     }
 
@@ -156,16 +164,39 @@ public class DispersedExchange extends SimState {
     }
 
     public void nextRound(DispersedExchange market) {
-            prices = prices();
-            wealthChange = getWealthChanges(prices);
-            //System.out.print(toString(ROUND));
-            try {
-                Files.write(Paths.get("wealthChange.txt"),
-                            (getWealthString() + "\n").getBytes(),
-                            StandardOpenOption.APPEND);
-            } catch (Exception e) {}
-            updateNetwork(market, wealthChange);
-            resetTraders();
+        double[] tmpTotals = new double[numGoods];
+        prices = prices();
+        wealthChange = getWealthChanges(prices);
+        System.out.print(toString(ROUND));
+        try {
+            Files.write(Paths.get("wealthChange.txt"),
+                        (getWealthString() + "\n").getBytes(),
+                        StandardOpenOption.APPEND);
+        } catch (Exception e) {}
+        // check good totals
+        if (!checkMarketTotals(market)) {
+            System.out.println("Wrong!!!");
+        }
+        updateNetwork(market, wealthChange);
+        resetTraders();
+    }
+
+    double[] getMarketTotals(DispersedExchange market) {
+        double[] tmp = new double[numGoods];
+        for (int i = 0; i < numGoods; i++) {
+            for (int j = 0; j < numAgents; j++) {
+                tmp[i] += traderArray[j].endowment[i];
+            }
+        }
+        return tmp;
+    }
+
+    boolean checkMarketTotals(DispersedExchange market) {
+        double[] tmp = getMarketTotals(market);
+        for (int i = 0; i < numGoods; i++) {
+            if (tmp[i] != totals[i]) return false;
+        }
+        return true;
     }
 
     double[] prices() {

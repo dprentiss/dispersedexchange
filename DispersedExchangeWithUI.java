@@ -69,7 +69,6 @@ public class DispersedExchangeWithUI extends GUIState {
 
         display.attach(fieldPortrayal, "Field");
         display.attach(networkPortrayal, "Traders");
-
     }
 
     public void quit() {
