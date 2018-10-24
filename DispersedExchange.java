@@ -46,7 +46,7 @@ public class DispersedExchange extends SimState {
 
     /** Constructor default */
     public DispersedExchange(long seed) {
-        this(seed, 16, 2);
+        this(seed, 256, 2);
     }
 
     /** Constructor */
@@ -153,6 +153,11 @@ public class DispersedExchange extends SimState {
 
         roundNum = 0;
         setEndowments();
+        try {
+            Files.write(Paths.get("mrs.txt"),
+                        (getMRSString() + "\n").getBytes(),
+                        StandardOpenOption.APPEND);
+        } catch (Exception e) {}
         initNetwork();
         initField();
 
@@ -167,10 +172,15 @@ public class DispersedExchange extends SimState {
         double[] tmpTotals = new double[numGoods];
         prices = prices();
         wealthChange = getWealthChanges(prices);
-        System.out.print(toString(ROUND));
+        //System.out.print(toString(ROUND));
         try {
             Files.write(Paths.get("wealthChange.txt"),
                         (getWealthString() + "\n").getBytes(),
+                        StandardOpenOption.APPEND);
+        } catch (Exception e) {}
+        try {
+            Files.write(Paths.get("mrs.txt"),
+                        (getMRSString() + "\n").getBytes(),
                         StandardOpenOption.APPEND);
         } catch (Exception e) {}
         // check good totals

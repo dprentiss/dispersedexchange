@@ -102,8 +102,10 @@ public class Trader implements Steppable {
         for (int i = 0; i < numGoods; i++) {
             tmp = allocation[i] + invoice[i];
             if (tmp < 0) {
+                /*
                 System.out.println();
                 System.out.printf("***Invoice check failed for good %d with balance %f***\n", i, tmp);
+                */
                 return false;
             }
         }
@@ -241,14 +243,6 @@ public class Trader implements Steppable {
                 newInvoice[buyGood] = -1.0;
             }
         }
-        /*
-        System.out.println("Bid out:");
-        System.out.print(Arrays.toString(newInvoice));
-        System.out.println("\n");
-        System.out.print(Arrays.toString(invertInvoice(newInvoice)));
-        System.out.println("\n");
-        System.out.printf("Utility change: %f\n", getUtilityChange(invertInvoice(newInvoice)));
-        */
         if (getUtilityChange(invertInvoice(newInvoice)) <= 0.0) {
             for (int i = 0; i < numGoods; i++) {
                 newInvoice[i] = 0.0;
