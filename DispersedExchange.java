@@ -58,7 +58,8 @@ public class DispersedExchange extends SimState {
         traderArray = new Trader[numAgents];
         numGoods = goods;
         totals = new double[numGoods];
-        maxEdges = ((numAgents * (numAgents-1)) / 2) - numAgents;
+        //maxEdges = ((numAgents * (numAgents-1)) / 2) - numAgents;
+        maxEdges = 0;
     }
 
     void initNetwork() {
@@ -142,6 +143,9 @@ public class DispersedExchange extends SimState {
                         roundNum++;
                         nextRound(market);
                     } else {
+                        for (int i = 0; i < traderArray.length; i++) {
+                            System.out.print(traderArray[i].toString());
+                        }
                         market.finish();
                     }
                 }
@@ -172,7 +176,7 @@ public class DispersedExchange extends SimState {
         double[] tmpTotals = new double[numGoods];
         prices = prices();
         wealthChange = getWealthChanges(prices);
-        //System.out.print(toString(ROUND));
+        System.out.print(toString(ROUND));
         try {
             Files.write(Paths.get("wealthChange.txt"),
                         (getWealthString() + "\n").getBytes(),
@@ -363,15 +367,6 @@ public class DispersedExchange extends SimState {
         }
         return s.toString();
     }
-    /*
-    public void printMRS() {
-        StringBuilder s = new StringBuilder();
-        for (int i = 0; i < traderArray.length; i++) {
-            s.append(String.format("%6.3f, ", traderArray[i].MRS[0][1]));
-        }
-        System.out.println(s.toString());
-    }
-    */
 
     /** Main */
     public static void main(String[] args) {

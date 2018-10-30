@@ -237,9 +237,9 @@ public class Trader implements Steppable {
         if (buyGood > -1 && sellGood > - 1) {
             if (bestPrice < 1.0) {
                 newInvoice[sellGood] = -1.0;
-                newInvoice[buyGood] = bestPrice;
+                newInvoice[buyGood] = 1;
             } else {
-                newInvoice[sellGood] = 1.0 / bestPrice;
+                newInvoice[sellGood] = 1.0;
                 newInvoice[buyGood] = -1.0;
             }
         }
