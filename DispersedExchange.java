@@ -46,7 +46,7 @@ public class DispersedExchange extends SimState {
 
     /** Constructor default */
     public DispersedExchange(long seed) {
-        this(seed, 256, 2);
+        this(seed, 32, 2);
     }
 
     /** Constructor */
@@ -58,8 +58,8 @@ public class DispersedExchange extends SimState {
         traderArray = new Trader[numAgents];
         numGoods = goods;
         totals = new double[numGoods];
-        //maxEdges = ((numAgents * (numAgents-1)) / 2) - numAgents;
-        maxEdges = 0;
+        maxEdges = ((numAgents * (numAgents-1)) / 2) - numAgents;
+        //maxEdges = 0;
     }
 
     void initNetwork() {
@@ -370,7 +370,60 @@ public class DispersedExchange extends SimState {
 
     /** Main */
     public static void main(String[] args) {
-        doLoop(DispersedExchange.class, args);
+        //doLoop(DispersedExchange.class, args);
+        int i = 0, j;
+        String arg;
+        char flag;
+        boolean vflag = false;
+        String outputfile = "";
+
+        Long seed = System.currentTimeMillis();
+
+        while (i < args.length && args[i].startsWith("-")) {
+            arg = args[i++];
+
+            // use this type of check for "wordy" arguments
+            if (arg.equals("-verbose")) {
+                System.out.println("verbose mode on");
+                vflag = true;
+            }
+
+            // use this type of check for arguments that require arguments
+            else if (arg.equals("-s") || arg.equals("--seed")) {
+                if (i < args.length)
+                    seed = Long.parseLong(args[i++]);
+                else
+                    System.err.println("-s options requires an integer seed");
+                if (vflag)
+                    System.out.println("output file = " + outputfile);
+            }
+
+            // use this type of check for a series of flag arguments
+            else {
+                for (j = 1; j < arg.length(); j++) {
+                    flag = arg.charAt(j);
+                    switch (flag) {
+                    case 'x':
+                        if (vflag) System.out.println("Option x");
+                        break;
+                    case 'n':
+                        if (vflag) System.out.println("Option n");
+                        break;
+                    default:
+                        System.err.println("ParseCmdLine: illegal option " + flag);
+                        break;
+                    }
+                }
+            }
+        }
+        if (i == args.length)
+            System.err.println("Usage: DispersedExchange [-verbose] [-xn] [-output afile] filename");
+        else
+            System.out.println("Success!");
+
+        SimState state = new DispersedExchange(seed);
+        state.start();
+        while (state.schedule.step(state))
         System.exit(0);
     }
 }
