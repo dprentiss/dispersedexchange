@@ -377,23 +377,68 @@ public class DispersedExchange extends SimState {
         boolean vflag = false;
         String outputfile = "";
 
-        Long seed = System.currentTimeMillis();
+        long seed = System.currentTimeMillis();
+        int numAgents = 16;
+        int numGoods = 2;
 
         while (i < args.length && args[i].startsWith("-")) {
             arg = args[i++];
 
             // use this type of check for "wordy" arguments
             if (arg.equals("-verbose")) {
-                System.out.println("verbose mode on");
                 vflag = true;
             }
 
             // use this type of check for arguments that require arguments
-            else if (arg.equals("-s") || arg.equals("--seed")) {
-                if (i < args.length)
-                    seed = Long.parseLong(args[i++]);
-                else
+            else if (arg.equals("-s")) {
+                if (i < args.length) {
+                    try {
+                        seed = Long.parseLong(args[i++]);
+                    } catch (NumberFormatException e) {
+                        System.err.println("-s option requires an integer seed");
+                        System.exit(0);
+                    }
+                } else {
                     System.err.println("-s options requires an integer seed");
+                    System.exit(0);
+                }
+                if (vflag)
+                    System.out.println("output file = " + outputfile);
+            } else if (arg.equals("-f")) {
+                if (i < args.length) {
+                    //seed = Long.parseLong(args[i++]);
+                } else {
+                    System.err.println("-f option requires a filename");
+                    System.exit(0);
+                }
+                if (vflag)
+                    System.out.println("output file = " + outputfile);
+            } else if (arg.equals("-g")) {
+                if (i < args.length) {
+                    try {
+                        numGoods = Integer.parseInt(args[i++]);
+                    } catch (NumberFormatException e) {
+                        System.err.println("-a option requires an integer multiple of -n");
+                        System.exit(0);
+                    }
+                } else {
+                    System.err.println("-a option requires an integer multiple of -n");
+                    System.exit(0);
+                }
+                if (vflag)
+                    System.out.println("output file = " + outputfile);
+            } else if (arg.equals("-a")) {
+                if (i < args.length) {
+                    try {
+                        numAgents = Integer.parseInt(args[i++]);
+                    } catch (NumberFormatException e) {
+                        System.err.println("-a option requires an integer");
+                        System.exit(0);
+                    }
+                } else {
+                    System.err.println("-a option must be a whole-number multiple of the number of goods");
+                    System.exit(0);
+                }
                 if (vflag)
                     System.out.println("output file = " + outputfile);
             }
@@ -410,7 +455,7 @@ public class DispersedExchange extends SimState {
                         if (vflag) System.out.println("Option n");
                         break;
                     default:
-                        System.err.println("ParseCmdLine: illegal option " + flag);
+                        System.err.println("DispersedExchange: illegal option " + flag);
                         break;
                     }
                 }
@@ -421,9 +466,14 @@ public class DispersedExchange extends SimState {
         else
             System.out.println("Success!");
 
-        SimState state = new DispersedExchange(seed);
+        System.out.println(seed);
+        System.out.println(numAgents);
+        System.out.println(numGoods);
+
+        SimState state = new DispersedExchange(seed, numAgents, numGoods);
         state.start();
-        while (state.schedule.step(state))
+        do {
+        } while (state.schedule.step(state));
         System.exit(0);
     }
 }
