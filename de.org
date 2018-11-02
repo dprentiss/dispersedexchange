@@ -1,0 +1,1 @@
+* Wardrop equilibrium is the traffic assignment analog of Walras' equilibrium.
