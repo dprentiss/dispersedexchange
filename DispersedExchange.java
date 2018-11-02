@@ -8,7 +8,9 @@ import sim.util.*;
 import sim.field.continuous.*;
 import sim.field.network.*;
 import java.util.Arrays;
-import java.nio.file.*;
+import java.io.*;
+import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 
 public class DispersedExchange extends SimState {
 
@@ -34,7 +36,10 @@ public class DispersedExchange extends SimState {
     public double[] wealthChange;
     public double[] prices;
     public double[] totals;
-    public int roundNum = 1;
+    public int roundNum = 0;
+    public boolean vflag = false;
+    public String dateTimeString = "";
+    public String filename = "";
 
     // Accesors
 
@@ -46,20 +51,28 @@ public class DispersedExchange extends SimState {
 
     /** Constructor default */
     public DispersedExchange(long seed) {
-        this(seed, 32, 2);
+        this(seed, 8, 2, false);
     }
 
     /** Constructor */
-    public DispersedExchange(long seed, int agents, int goods) {
+    public DispersedExchange(long seed, int agents, int goods, boolean vflag) {
         // Required by SimState
         super(seed);
 
         this.numAgents = agents;
         traderArray = new Trader[numAgents];
         numGoods = goods;
+        this.vflag = vflag;
         totals = new double[numGoods];
         maxEdges = ((numAgents * (numAgents-1)) / 2) - numAgents;
         //maxEdges = 0;
+        dateTimeString = Instant.now().toString();
+        dateTimeString = dateTimeString.replace(":",".");
+        filename = String.format("%s-%ds-%da-%dg.csv",
+                                 dateTimeString,
+                                 seed,
+                                 numAgents,
+                                 numGoods);
     }
 
     void initNetwork() {
@@ -144,7 +157,9 @@ public class DispersedExchange extends SimState {
                         nextRound(market);
                     } else {
                         for (int i = 0; i < traderArray.length; i++) {
-                            System.out.print(traderArray[i].toString());
+                            if(vflag) {
+                                System.out.print(traderArray[i].toString());
+                            }
                         }
                         market.finish();
                     }
@@ -152,16 +167,52 @@ public class DispersedExchange extends SimState {
             }
         };
 
+    private String getRoundHeader() {
+        StringBuilder s = new StringBuilder();
+        s.append("round, ");
+        s.append("trader, ");
+        for (int i = 0; i < numGoods; i++) {
+            s.append(String.format("good_%d, ", i));
+        }
+        for (int i = 0; i < numGoods; i++) {
+            s.append(String.format("volume_%d, ", i));
+        }
+        for (int i = 0; i < numGoods; i++) {
+            s.append(String.format("price_%d, ", i));
+        }
+        s.append("utility, ");
+        s.append("wealth\n");
+        return s.toString();
+    }
+
+    private String getRoundData() {
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < numAgents; i++) {
+            s.append(roundNum);
+            s.append(", ");
+            s.append(traderArray[i].toString(0));
+            s.append(wealthChange[i]);
+            s.append("\n");
+        }
+        return s.toString();
+    }
+
     public void start() {
         super.start();
 
         roundNum = 0;
         setEndowments();
-        try {
-            Files.write(Paths.get("mrs.txt"),
-                        (getMRSString() + "\n").getBytes(),
-                        StandardOpenOption.APPEND);
-        } catch (Exception e) {}
+        prices = prices();
+        wealthChange = getWealthChanges(prices);
+        try(FileWriter fw = new FileWriter(filename, true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            PrintWriter out = new PrintWriter(bw)) {
+            out.print(getRoundHeader());
+            out.print(getRoundData());
+        } catch (IOException e) { }
+        System.out.println(filename);
+        //System.out.print(getRoundHeader());
+        //System.out.print(getRoundData());
         initNetwork();
         initField();
 
@@ -176,17 +227,15 @@ public class DispersedExchange extends SimState {
         double[] tmpTotals = new double[numGoods];
         prices = prices();
         wealthChange = getWealthChanges(prices);
-        System.out.print(toString(ROUND));
-        try {
-            Files.write(Paths.get("wealthChange.txt"),
-                        (getWealthString() + "\n").getBytes(),
-                        StandardOpenOption.APPEND);
-        } catch (Exception e) {}
-        try {
-            Files.write(Paths.get("mrs.txt"),
-                        (getMRSString() + "\n").getBytes(),
-                        StandardOpenOption.APPEND);
-        } catch (Exception e) {}
+        if (vflag) {
+            System.out.print(toString(ROUND));
+        }
+        try(FileWriter fw = new FileWriter(filename, true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            PrintWriter out = new PrintWriter(bw)) {
+            out.print(getRoundData());
+        } catch (IOException e) { }
+        //System.out.print(getRoundData());
         // check good totals
         if (!checkMarketTotals(market)) {
             System.out.println("Wrong!!!");
@@ -422,7 +471,7 @@ public class DispersedExchange extends SimState {
                         System.exit(0);
                     }
                 } else {
-                    System.err.println("-a option requires an integer multiple of -n");
+                    System.err.println("-g requires an integer");
                     System.exit(0);
                 }
                 if (vflag)
@@ -444,6 +493,7 @@ public class DispersedExchange extends SimState {
             }
 
             // use this type of check for a series of flag arguments
+            /*
             else {
                 for (j = 1; j < arg.length(); j++) {
                     flag = arg.charAt(j);
@@ -460,6 +510,7 @@ public class DispersedExchange extends SimState {
                     }
                 }
             }
+            */
         }
         if (i == args.length)
             System.err.println("Usage: DispersedExchange [-verbose] [-xn] [-output afile] filename");
@@ -470,7 +521,7 @@ public class DispersedExchange extends SimState {
         System.out.println(numAgents);
         System.out.println(numGoods);
 
-        SimState state = new DispersedExchange(seed, numAgents, numGoods);
+        SimState state = new DispersedExchange(seed, numAgents, numGoods, false);
         state.start();
         do {
         } while (state.schedule.step(state));

@@ -237,9 +237,9 @@ public class Trader implements Steppable {
         if (buyGood > -1 && sellGood > - 1) {
             if (bestPrice < 1.0) {
                 newInvoice[sellGood] = -1.0;
-                newInvoice[buyGood] = 1;
+                newInvoice[buyGood] = bestPrice;
             } else {
-                newInvoice[sellGood] = 1.0;
+                newInvoice[sellGood] = 1.0 / bestPrice;
                 newInvoice[buyGood] = -1.0;
             }
         }
@@ -302,8 +302,8 @@ public class Trader implements Steppable {
         numGoods = allocation.length;
         MRS = new double[numGoods][numGoods];
         updateMRS();
-        System.out.println();
-        System.out.print(this.toString());
+        //System.out.println();
+        //System.out.print(this.toString());
     }
 
     public String toString() {
@@ -325,6 +325,27 @@ public class Trader implements Steppable {
             s += "\n";
         }
         return s;
+    }
+
+    public String toString(int o) {
+        StringBuilder s = new StringBuilder();
+        s.append(idNum);
+        s.append(", ");
+        for (int i = 0; i < numGoods; i++) {
+            s.append(allocation[i]);
+            s.append(", ");
+        }
+        for (int i = 0; i < numGoods; i++) {
+            s.append(allocation[i] - endowment[i]);
+            s.append(", ");
+        }
+        for (int i = 0; i < numGoods; i++) {
+            s.append(MRS[0][i]);
+            s.append(", ");
+        }
+        s.append(getUtility());
+        s.append(", ");
+        return s.toString();
     }
 
     public void step(final SimState state) {
