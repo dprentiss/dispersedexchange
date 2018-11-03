@@ -169,18 +169,18 @@ public class DispersedExchange extends SimState {
 
     private String getRoundHeader() {
         StringBuilder s = new StringBuilder();
-        s.append("round, ");
-        s.append("trader, ");
+        s.append("round,");
+        s.append("trader,");
         for (int i = 0; i < numGoods; i++) {
-            s.append(String.format("good_%d, ", i));
+            s.append(String.format("good_%d,", i));
         }
         for (int i = 0; i < numGoods; i++) {
-            s.append(String.format("volume_%d, ", i));
+            s.append(String.format("volume_%d,", i));
         }
         for (int i = 0; i < numGoods; i++) {
-            s.append(String.format("price_%d, ", i));
+            s.append(String.format("price_%d,", i));
         }
-        s.append("utility, ");
+        s.append("utility,");
         s.append("wealth\n");
         return s.toString();
     }
@@ -189,7 +189,7 @@ public class DispersedExchange extends SimState {
         StringBuilder s = new StringBuilder();
         for (int i = 0; i < numAgents; i++) {
             s.append(roundNum);
-            s.append(", ");
+            s.append(",");
             s.append(traderArray[i].toString(0));
             s.append(wealthChange[i]);
             s.append("\n");
