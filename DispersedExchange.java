@@ -161,7 +161,7 @@ public class DispersedExchange extends SimState {
                     } else {
                         if(vflag) {
                             for (int i = 0; i < traderArray.length; i++) {
-                                System.out.print(traderArray[i].toString());
+                                // System.out.print(traderArray[i].toString());
                             }
                         }
                         market.finish();
@@ -223,7 +223,7 @@ public class DispersedExchange extends SimState {
 
         if(vflag) {
             for (int i = 0; i < traderArray.length; i++) {
-                System.out.print(traderArray[i].toString());
+                //System.out.print(traderArray[i].toString());
             }
         }
 
@@ -235,7 +235,7 @@ public class DispersedExchange extends SimState {
         prices = prices();
         wealthChange = getWealthChanges(prices);
         if (vflag) {
-            System.out.print(toString(ROUND));
+            //System.out.print(toString(ROUND));
         }
         try(FileWriter fw = new FileWriter(filename, true);
             BufferedWriter bw = new BufferedWriter(fw);
