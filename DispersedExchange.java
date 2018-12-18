@@ -22,7 +22,7 @@ public class DispersedExchange extends SimState {
     public final int numAgents;
     public final int numGoods;
     final int maxRounds;
-    final int maxTraderEdges = 5;
+    final int maxTraderEdges = 8;
     final int maxEdges;
 
     //// Properties
@@ -53,7 +53,7 @@ public class DispersedExchange extends SimState {
 
     /** Constructor default */
     public DispersedExchange(long seed) {
-        this(seed, 8, 2, false);
+        this(seed, 256, 2, false);
     }
 
     /** Constructor */
@@ -66,7 +66,7 @@ public class DispersedExchange extends SimState {
         numGoods = goods;
         this.vflag = vflag;
         totals = new double[numGoods];
-        maxRounds = ((numAgents * (numAgents-1)) / 2) - numAgents;
+        maxRounds = 4 * ((numAgents * (numAgents-1)) / 2) - numAgents;
         //maxRounds = 1;
         maxEdges = ((numAgents * (numAgents-1)) / 4) - numAgents;
         dateTimeString = Instant.now().toString();
@@ -247,7 +247,7 @@ public class DispersedExchange extends SimState {
         if (!checkMarketTotals(market)) {
             System.out.println("Wrong!!!");
         }
-        updateNetwork(market, wealthChange);
+        updateNetwork2(market, wealthChange);
         resetTraders();
     }
 
@@ -299,11 +299,134 @@ public class DispersedExchange extends SimState {
         return w;
     }
 
-    void updateNetwork2(DispersedExchange state) {
+    void updateNetwork2(DispersedExchange state, double[] wealthChange) {
+        int minEdges = 2;
+        Edge[][] adjList = traderNet.getAdjacencyList(true);
+        Edge tmpEdge = null;
+        Bag connectedNodes = new Bag();
+        Bag connectedEdges = new Bag();
         double[] wealth = wealthChange.clone();
-        Trader addTrader = null;
-        Trader removeTrader = null;
-        // find worst-off Trader
+        Trader worstTrader = null;
+        Trader nextTrader = null;
+        Trader randTraderOne = null;
+        Trader randTraderTwo = null;
+        int worstTraderNum = -1;
+        int nextTraderNum = -1;
+        int randTraderOneNum = -1;
+        int randTraderTwoNum = -1;
+        int neighborNum = -1;
+        double worstWealth = Double.POSITIVE_INFINITY;
+
+        while (nextTraderNum == -1 || worstTraderNum == -1) {
+            // find worst-off Trader
+            worstWealth = Double.POSITIVE_INFINITY;
+            for (int i = 0; i < wealth.length; i++) {
+                if (wealth[i] < worstWealth) {
+                    worstWealth = wealth[i];
+                    worstTraderNum = i;
+                }
+            }
+            if (worstTraderNum == -1) {
+                state.finish();
+                return;
+            } else {
+                worstTrader = traderArray[worstTraderNum];
+            }
+
+            // skip worst-off trader if already has maxTraderEdges
+            if (worstTrader.neighborsIn.length >= maxTraderEdges) {
+                wealth[worstTraderNum] = Double.POSITIVE_INFINITY;
+                worstTraderNum = -1;
+                continue;
+            }
+
+            // ignore neighbors, self, and fully connected nodes
+            for (int i = 0; i < worstTrader.neighborsIn.length; i++) {
+                neighborNum =
+                    ((Trader)worstTrader.neighborsIn[i].getFrom()).idNum;
+                wealth[neighborNum] = Double.POSITIVE_INFINITY;
+            }
+            wealth[worstTraderNum] = Double.POSITIVE_INFINITY;
+
+            // find new neighbor
+            worstWealth = Double.POSITIVE_INFINITY;
+            /*
+            nextTrader = traderArray[state.random.nextInt(numAgents)];
+            */
+            for (int i = 0; i < wealth.length; i++) {
+                if (wealth[i] < worstWealth
+                        && i != worstTraderNum) {
+                    worstWealth = wealth[i];
+                    nextTraderNum = i;
+                        }
+            }
+            if (nextTraderNum == -1) {
+                state.finish();
+                return;
+            } else {
+                nextTrader = traderArray[state.random.nextInt(numAgents)];
+            }
+
+            // skip new neighbor if already fully connected
+            if (nextTrader.neighborsIn.length >= maxTraderEdges) {
+                wealth[nextTraderNum] = Double.POSITIVE_INFINITY;
+            }
+        }
+
+        // connect the two
+        traderNet.addEdge(worstTrader, nextTrader, null);
+        traderNet.addEdge(nextTrader, worstTrader, null);
+
+        // update their neighbor lists
+        worstTrader.updateNeighbors(state);
+        nextTrader.updateNeighbors(state);
+
+
+        // randomly disconnect two neighbors
+        for (int i = 0; i < adjList.length; i++) {
+            if (adjList[i].length > minEdges) {
+                connectedNodes.add(traderArray[i]);
+            }
+        }
+        if (connectedNodes.numObjs > 1) {
+            connectedNodes.shuffle(state.random);
+            for (int i = 0; i < connectedNodes.numObjs; i++) {
+                for (int j = 0; j < connectedNodes.numObjs; j++) {
+                    tmpEdge = traderNet.getEdge(connectedNodes.objs[i],
+                                                connectedNodes.objs[j]);
+                    if (tmpEdge != null) {
+                        traderNet.removeEdge(tmpEdge);
+                        tmpEdge = traderNet.getEdge(connectedNodes.objs[j],
+                                                    connectedNodes.objs[i]);
+                        traderNet.removeEdge(tmpEdge);
+                        ((Trader)connectedNodes.objs[i]).updateNeighbors(state);
+                        ((Trader)connectedNodes.objs[j]).updateNeighbors(state);
+                        break;
+                    }
+                }
+            }
+        }
+
+        /*
+        if (nextTrader.neighborsIn.length > 1) {
+            randomEdgeNum = state.random.nextInt(nextTrader.neighborsIn.length);
+            nextNeighborEdge = nextTrader.neighborsIn[randomEdgeNum];
+            traderNet.removeEdge(nextNeighborEdge);
+            nextNeighbor = (Trader)nextNeighborEdge.getOtherNode(nextTrader);
+            traderNet.removeEdge(nextTrader.neighborsOut[randomEdgeNum]);
+        }
+        */
+
+
+        /*
+        System.out.print(worstTrader.toString());
+        System.out.println(worstTrader.neighborsIn.length);
+        System.out.print(nextTrader.toString());
+        System.out.println(nextTrader.neighborsIn.length);
+        //System.out.print(nextNeighbor.toString());
+        //System.out.println(nextNeighbor.neighborsIn.length);
+        System.out.println(Arrays.toString(wealth));
+        */
     }
 
     void updateNetwork(DispersedExchange state, double[] wealthChange) {
@@ -380,6 +503,7 @@ public class DispersedExchange extends SimState {
     //printMRS();
     //System.out.println(Arrays.toString(prices()));
     //System.out.println(Arrays.toString(getWealthChanges(prices())));
+
     public String toString(int option) {
         StringBuilder s = new StringBuilder();
         switch (option) {
@@ -433,8 +557,8 @@ public class DispersedExchange extends SimState {
 
     /** Main */
     public static void main(String[] args) {
-        //doLoop(DispersedExchange.class, args);
-        int i = 0, j;
+        int i = 0;
+        int j = 0;
         String arg;
         char flag;
         boolean vflag = true;
