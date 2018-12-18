@@ -53,7 +53,7 @@ public class DispersedExchange extends SimState {
 
     /** Constructor default */
     public DispersedExchange(long seed) {
-        this(seed, 256, 2, false);
+        this(seed, 32, 2, false);
     }
 
     /** Constructor */
@@ -247,7 +247,7 @@ public class DispersedExchange extends SimState {
         if (!checkMarketTotals(market)) {
             System.out.println("Wrong!!!");
         }
-        updateNetwork2(market, wealthChange);
+        updateNetwork(market, wealthChange);
         resetTraders();
     }
 

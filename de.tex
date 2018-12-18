@@ -1,5 +1,6 @@
 \documentclass[smallextended]{svjour3}
 \usepackage{mathptmx}
+\usepackage{graphicx}
 \begin{document}
 \title{Distributed, agent-based equilibrium solution with iterative network
 updates}
@@ -11,18 +12,25 @@ updates}
 \date{\today}
 \maketitle
 \begin{abstract}
-  We propose an agent based model for solving the general competitive
-  equilibrium problem for exchange economies.
+  We propose an agent based model for approximating the competitive
+  equilibrium for exchange economies. Our model employs simple agents
+  engaged in bilateral trade in a network. Highly parallel agent algorithms and
+  minimal graph operations allow for agents to trade to equilibrium over many
+  different network topologies. We employ the wealth effect alone to guide our
+  search in a large space of possible topologies.
 \end{abstract}
 \section{Introduction}
-\begin{itemize}
-\item \cite{albin1992decentralized} establish the concept of decentralized,
-  boundedly-rational agents trading in an exchange economy.
-\item \cite{wilhite2001bilateral} explored the effects of different network
+  \begin{itemize}
+  \item \cite{albin1992decentralized}: Agents trade two goods with partners found by
+    broadcasting interests.
+  \item \cite{wilhite2001bilateral}: The effects of different network
   topologies on agents engaged in bilateral trade.
-\item \cite{sunder2002simple} introduce an iterative scheme where traders retain
-  price information from previous epochs of training.
-\end{itemize}
+  \item \cite{sunder2002simple}: An iterative scheme where traders retain
+  price information from previous epochs of trading.
+  \item \cite{axtell2005complexity}: Agents trading bilaterally are more
+    efficient than the Walrasian process for large numbers of goods and agents.
+  \item What if we used wealth effects to update trading partners iteratively?
+  \end{itemize}
 \section{Model}
 Our model is comprised of simple agents in a pure exchange economy.
 These agents exchange abstract goods with neighboring agents in a network.
@@ -48,7 +56,7 @@ Agents may exchange goods only with their immediate neighbors and are privy to t
 neighbors' respective marginal rates of substitution. Each round, every agent
 completes actions in the following order:
 \begin{enumerate}
-\item Check if any bids from the previous round were accepted.
+\item Check if the bid from the previous round were accepted.
 If a previous bid was accepted by a neighbor, update allocation and MRS.
 \item Consider bids from neighbors and accept all rational offers.
 Bids are rational if the exchange improves the agents utility. If a bid is
@@ -68,11 +76,22 @@ This topology is altered by successive epochs as edges are added and removed.
 When each epoch is completed, the network update heuristic is executed. In this work
 we considered two update heuristics: one which only adds new edges and another
 which both adds and removes edges.
+
 \subsubsection{Add-only Network Update Heuristic}
+  At the end of each epoch:
+  \begin{enumerate}
+  \item Identify worst-off agent
+  \item Add edge to next-worst-off agent that is not already a neighbor
+  \item Stop when graph is complete
+  \end{enumerate}
 \subsubsection{Add-and-remove Network Update Heuristic}
-\begin{enumerate}
-\item
-\end{enumerate}
+  At the end of each epoch:
+  \begin{enumerate}
+  \item Identify worst-off agent
+  \item Add edge to random agent that is not already a neighbor
+  \item Randomly remove an edge connecting agents that both have two or more neighbors
+  \item Stop after an arbitrary number of epochs.
+  \end{enumerate}
 
 \subsection{Implementation}
 One of the principles guiding this research was the computational independence
@@ -101,6 +120,125 @@ bids from each agent. Although, it contains multiple copies of each, depending
 on the number neighbors each agent has.
 
 \section{Simulation Results}
+The add-only heuristic was first to be implemented and tested. Economies with up
+to 512 agents were run with randomly generated endowments. In most cases the
+simulation was run until all agents in the network were fully connected.
+Here we illustrate our results with a typical example with 64 agents.
+Figure \ref{h1start} shows the result for our example.
+For the add-only heuristic, initial epochs reduced the wealth effect but
+increased connectivity in the network tended to increase it. Figure
+\ref{h1allgap} shows the maximum and minimum wealth changes for the same example.
+The equilibrium prices were found quickly and stable until termination.
+Figures \ref{h1prices} and \ref{h1allpricesave} show the MRS with respect to
+good to for each agent and the average respectively.
+
+With the add-only heuristic, agents quickly found the equilibrium price and
+consistently reduces the wealth effect in early epochs. However, it's tendency
+to increase the wealth effect over successive epochs, while an interesting
+result in and of itself, rules it out as a candidate for our purposes.
+In addition to this drawback, fully connected agents take a relatively large
+number of operations to process each round in large networks. If executed purely
+in parallel this would not necessarily be a practical issue. However with
+minimal paralellization, large networks become infeasible.
+
+\begin{figure}
+  \includegraphics[width=0.75\textwidth]{h1startwealth.png}
+  \caption{Wealth effect after each epoch for a typical, 64-agent example with the add-only
+    network update heuristic. }
+  \label{h1start}
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=0.75\textwidth]{h1allgap.png}
+  \caption{Extrema of wealth effect after each epoch for a typical, 64-agent
+    example with the add-only network update heuristic. The maximum (blue),
+    minimum (orange), and difference (green) are shown.}
+  \label{h1allgap}
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=0.75\textwidth]{h1prices.png}
+  \caption{MRS of good two with respect to good one (numeraire) after each epoch
+    for a typical, 64-agent example with the add-only network update heuristic.
+    Each color represents a different agent}
+  \label{h1prices}
+\end{figure}
+
+\begin{figure}
+  \caption{Average MRS of good two with respect to good one (numeraire) after each epoch for a typical, 64-agent example with the add-only network update heuristic. }
+  \includegraphics[width=0.75\textwidth]{h1allpriceave.png}
+  \label{h1allpriceave}
+\end{figure}
+
+%\begin{figure}
+  %\caption{Wealth effect after each epoch for a typical, 64-agent example with the add-only
+    %network update heuristic. Results near the lowest wealth change achieved in
+    %this example are shown.}
+  %\includegraphics[width=\textwidth]{h1bestwealth.png}
+%\end{figure}
+
+The next update heuristic to be considered allow for edges to be removed.
+Compared with the add-only heuristic this method was more computationally
+efficient and found a network configuration with a lower wealth effect for the
+same endowment. Again, we illustrate our results here with the same initial economy
+demonstrated for the add-only heuristic.
+Figure \ref{h2startwealth} shows the wealth effect for the first 200 epochs
+and figure \ref{h2startgap} shows the wealth effect extrema for the 64-agent example.
+In general, the add-and-remove finds better solutions in less time but
+not necessarily in fewer epochs.
+However, this advantage is mitigated by several drawbacks.
+
+First, our simulations failed to demonstrate a significant trend to convergence after a few
+thousand epochs. Figure \ref{h2allgap} shows the wealth effect extrema for 8000
+epochs in our example. While successive epochs do not diverge as with the
+add-only heuristic, they show no convergent trend.
+
+Second, prices (MRS) are not as stable. This is the direct result of the
+heuristic in that there is no guarantee that the entire network will stay
+connected.
+On the contrary, the price spikes shown in \ref{h2prices} and \ref{h2allpriceave} illustrate a common
+state of affairs where small sections of the network, sometimes as small as one agent,
+become disconnected and agent cannot rationally trade. In this case, the MRS for
+those agents reflects their endowment for the duration of epochs in which they
+are disconnected.
+
+\begin{figure}
+  \includegraphics[width=0.75\textwidth]{h2startwealth.png}
+  \caption{Wealth effect after each epoch for a typical, 64-agent example with the add-and-remove
+    network update heuristic.}
+  \label{h2startwealth}
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=0.75\textwidth]{h2startgap.png}
+  \caption{Extrema of wealth effect after each epoch for a typical, 64-agent
+    example with the add-and-remove network update heuristic. The maximum (blue),
+    minimum (orange), and difference (green) for the first 800 epochs are shown.}
+  \label{h2startgap}
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=0.75\textwidth]{h2allgap.png}
+  \caption{Extrema of wealth effect after each epoch for a typical, 64-agent
+    example with the add-and-remove network update heuristic. The maximum (blue),
+    minimum (orange), and difference (green) for 8000 epochs are shown.}
+  \label{h2allgap}
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=0.75\textwidth]{h2prices.png}
+  \caption{MRS of good two with respect to good one (numeraire) after each epoch
+    for a typical, 64-agent example with the add-and-remove network update heuristic.
+    Each color represents a different agent.}
+  \label{h2prices}
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=0.75\textwidth]{h2allpriceave.png}
+  \caption{Average MRS of good two with respect to good one (numeraire) after
+    each epoch for a typical, 64-agent example with the add-and-remove network update heuristic. }
+  \label{h2allpriceave}
+\end{figure}
 
 \section{Discussion}
 Our results support the findings in \cite {wilhite2001bilateral}, i.e. that being positioned as a ``crossover'' node between otherwise
