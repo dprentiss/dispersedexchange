@@ -247,7 +247,7 @@ public class DispersedExchange extends SimState {
         if (!checkMarketTotals(market)) {
             System.out.println("Wrong!!!");
         }
-        updateNetwork(market, wealthChange);
+        updateNetwork2(market, wealthChange);
         resetTraders();
     }
 
