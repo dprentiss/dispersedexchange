@@ -1,0 +1,35 @@
+\documentclass[letterpaper]{article}
+\usepackage{times}
+\begin{document}
+\title{Wealth Effect in Bilateral Exchange Networks}
+\author{David Prentiss}
+\date{\today}
+\maketitle
+\begin{abstract}
+  We propose an agent based model for approximating the competitive
+  equilibrium for exchange economies. Our model employs simple agents
+  engaged in bilateral trade in a network. Highly parallel agent algorithms and
+  minimal graph operations allow for agents to trade to equilibrium over many
+  different network topologies. We employ the wealth effect alone to guide our
+  search in a large space of possible topologies.
+\end{abstract}
+
+\section{Endowments}
+Consider \(m\) agents trading in an exchange economy with \(n\) goods.
+Let agent \(j\) have endowment \((x_1^j, x_i^j, \dots, x_n^j)\)
+where \(i\in\left{1,\dots,n\right}\)
+and \(j\in\left{1,\dots,m\right}\)
+and let the agents' endowments satisfy the following constraints:
+\begin{equation}
+  \sum_{j=1}^m x_i^j= m \quad\forall i\in\left{1,\dots,n\right}
+\end{equation}
+and
+\begin{equation}
+  \sum_{i=1}^n x_i^j = 1 \quad\forall j\in\left{1,\dots,m\right}
+\end{equation}
+That is, the sum of each good \(i\) in the economy is equal to m
+Additionally, agents must have non negative endowments of each good.
+
+\bibliographystyle{spbasic}
+\bibliography{de}
+\end{document}
