@@ -130,6 +130,25 @@ public class DispersedExchange extends SimState {
         shuffleArray(endowments);
         for (int i = 0; i < numAgents; i++) {
             traderArray[i] =
+                new Trader(i,new double[]{endowments[i], 100 - endowments[i]});
+        }
+        // set good totals
+        for (int i = 0; i < numGoods; i++) {
+            for (int j = 0; j < numAgents; j++) {
+                totals[i] += traderArray[j].endowment[i];
+            }
+        }
+    }
+
+    void setEndowments2Goods() {
+        double[] endowments = new double[numAgents];
+        for (int i = 0; i < endowments.length; i = i+2) {
+            endowments[i] = random.nextDouble(false, false) * 100;
+            endowments[i+1] = 100 - endowments[i];
+        }
+        shuffleArray(endowments);
+        for (int i = 0; i < numAgents; i++) {
+            traderArray[i] =
                new Trader(i,new double[]{endowments[i], 100 - endowments[i]});
         }
         // set good totals
